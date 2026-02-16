@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch backend/src --exec ts-node backend/src/index.ts"
+    "dev": "nodemon --watch backend/src --exec node --loader ts-node/esm backend/src/index.ts"
   },
   "type": "module",
   "keywords": [],
