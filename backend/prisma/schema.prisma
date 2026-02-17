@@ -12,3 +12,30 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id                     Int       @id @default(autoincrement())
+  name                   String    @db.VarChar(255)
+  email                  String    @unique @db.VarChar(255)
+
+  photo                  String    @default("default.jpg") @db.VarChar(255)
+
+  role                   Role      @default(USER)
+
+  password               String    @db.VarChar(255)
+
+  passwordChangedAt      DateTime? @map("password_changed_at")
+  passwordResetToken     String?   @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpires   DateTime? @map("password_reset_expires")
+
+  active                 Boolean   @default(true)
+
+  @@map("users")
+}
+
+enum Role {
+  USER       @map("user")
+  GUIDE      @map("guide")
+  LEAD_GUIDE @map("lead-guide")
+  ADMIN      @map("admin")
+}
