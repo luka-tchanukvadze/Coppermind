@@ -2,9 +2,9 @@
   "name": "coppermind",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
-    "dev": "nodemon --watch backend/src --exec node --loader ts-node/esm backend/src/index.ts"
+    "dev": "nodemon --watch backend/src --exec node --loader ts-node/esm backend/src/server.ts"
   },
   "type": "module",
   "keywords": [],
@@ -17,8 +17,10 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@prisma/client": "^7.4.0",
+    "@prisma/client": "^6.19.2",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
-    "prisma": "^7.4.0"
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^6.19.2"
   }
 }

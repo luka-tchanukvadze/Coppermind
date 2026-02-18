@@ -5,13 +5,15 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../backend/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 
 model User {
   id                     Int       @id @default(autoincrement())
@@ -39,3 +41,4 @@ enum Role {
   LEAD_GUIDE @map("lead-guide")
   ADMIN      @map("admin")
 }
+
