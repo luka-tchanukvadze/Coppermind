@@ -1,0 +1,26 @@
+import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+import dotenv from "dotenv";
+
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure root .env is loaded (for runtime)
+// If running from root, path is just ".env"
+// If running from backend/src, path is "../../.env"
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
+const { Pool } = pg;
+
+const connectionString = process.env.DATABASE_URL;
+
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+console.log("Creating PrismaClient with adapter for:", connectionString?.substring(0, 20) + "...");
+const prisma = new PrismaClient({ adapter });
+
+export default prisma;
