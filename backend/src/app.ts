@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import prisma from "./db.js";
+import prisma from "./prisma.js";
 import userRouter from "./routes/userRoutes.js";
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
@@ -12,6 +12,8 @@ const app = express();
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send("hello");

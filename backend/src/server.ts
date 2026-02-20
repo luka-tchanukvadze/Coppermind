@@ -14,12 +14,9 @@ process.on("uncaughtException", (err) => {
 dotenv.config();
 
 import app from "./app.js";
-import prisma from "./db.js";
-
-console.log("hey 2");
+import prisma from "./prisma.js";
 
 const PORT = Number(process.env.PORT) || 5001;
-console.log(PORT);
 
 const server: Server = app.listen(PORT, async () => {
   try {

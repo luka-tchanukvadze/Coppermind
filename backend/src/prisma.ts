@@ -20,7 +20,6 @@ const connectionString = process.env.DATABASE_URL;
 
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
-console.log("Creating PrismaClient with adapter for:", connectionString?.substring(0, 20) + "...");
 const prisma = new PrismaClient({ adapter });
 
 export default prisma;
