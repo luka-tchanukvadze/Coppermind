@@ -9,9 +9,6 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure root .env is loaded (for runtime)
-// If running from root, path is just ".env"
-// If running from backend/src, path is "../../.env"
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const { Pool } = pg;

@@ -15,10 +15,7 @@ if (process.env.NODE_ENV === "development") {
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("hello");
-});
-
+// Routes
 app.use("/api/v1/users", userRouter);
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
