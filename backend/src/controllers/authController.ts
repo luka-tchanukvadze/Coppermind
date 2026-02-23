@@ -141,3 +141,36 @@ export const signup = catchAsync(
     createSendToken(newUser as any, 201, req, res);
   },
 );
+
+export const login = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+
+    // 1) Check if email & password exist
+    if (!email || !password) {
+      return next(new AppError("Please provide email and password", 400));
+    }
+
+    // 2) Find user + explicitly include password
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // 3) Check if user exists & password is correct
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return next(new AppError("Incorrect email or password", 401));
+    }
+
+    // 4) Remove sensitive fields from response
+    const safeUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      photo: user.photo,
+    };
+
+    // 5) Send token
+    createSendToken(safeUser as any, 200, req, res);
+  },
+);
