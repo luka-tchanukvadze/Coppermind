@@ -9,21 +9,7 @@ import prisma from "../prisma.js";
 import { Role } from "../../generated/prisma/index.js";
 import catchAsync from "./../utils/catchAsync.js";
 import AppError from "./../utils/appError.js";
-// import sendEmail from './../utils/email.js';
-// import { User, DecodedToken } from "./.";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  photo?: string;
-  password?: string;
-  role: Role;
-  passwordChangedAt?: Date;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
-  active?: boolean;
-}
+import { User } from "../../../types.d.js";
 
 ////////////////////////////////////////
 ////////// PASSWORD HELPERS ////////////
@@ -138,7 +124,7 @@ export const signup = catchAsync(
     });
 
     // 4) Send JWT
-    createSendToken(newUser as any, 201, req, res);
+    createSendToken(newUser as User, 201, req, res);
   },
 );
 
@@ -171,7 +157,7 @@ export const login = catchAsync(
     };
 
     // 5) Send token
-    createSendToken(safeUser as any, 200, req, res);
+    createSendToken(safeUser as User, 200, req, res);
   },
 );
 
@@ -192,7 +178,7 @@ export const protect = catchAsync(
     }
 
     // 2) Verify token
-    const decoded = (await promisify(jwt.verify)(
+    const decoded = (await (promisify(jwt.verify) as any)(
       token,
       process.env.JWT_SECRET as string,
     )) as { id: number; iat: number };
@@ -207,14 +193,14 @@ export const protect = catchAsync(
     }
 
     // 4) Check if password changed after token
-    if (changedPasswordAfter(decoded.iat, currentUser as any)) {
+    if (changedPasswordAfter(decoded.iat, currentUser as User)) {
       return next(
         new AppError("Password recently changed. Log in again.", 401),
       );
     }
 
     // 5) Grant access
-    req.user = currentUser as any;
+    req.user = currentUser as User;
     next();
   },
 );
@@ -262,7 +248,7 @@ export const updatePassword = catchAsync(
     });
 
     // 4) Send new token
-    createSendToken(updatedUser as any, 200, req, res);
+    createSendToken(updatedUser as User, 200, req, res);
   },
 );
 
