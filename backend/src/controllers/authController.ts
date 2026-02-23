@@ -9,7 +9,7 @@ import prisma from "../prisma.js";
 import { Role } from "../../generated/prisma/index.js";
 import catchAsync from "./../utils/catchAsync.js";
 import AppError from "./../utils/appError.js";
-import { User } from "../../../types.d.js";
+import { User, DecodedToken } from "../../../types.d.js";
 
 ////////////////////////////////////////
 ////////// PASSWORD HELPERS ////////////
@@ -181,7 +181,7 @@ export const protect = catchAsync(
     const decoded = (await (promisify(jwt.verify) as any)(
       token,
       process.env.JWT_SECRET as string,
-    )) as { id: number; iat: number };
+    )) as DecodedToken;
 
     // 3) Check if user still exists
     const currentUser = await prisma.user.findUnique({
