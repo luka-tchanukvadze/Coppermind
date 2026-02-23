@@ -230,3 +230,52 @@ export const restrictTo =
 
     next();
   };
+
+export const updatePassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { currentPassword, newPassword, newPasswordConfirm } = req.body;
+
+    if (!newPassword || newPassword !== newPasswordConfirm) {
+      return next(new AppError("Passwords do not match", 400));
+    }
+
+    // 1) Get user with password
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, password: true },
+    });
+
+    if (!user || !(await correctPassword(currentPassword, user.password))) {
+      return next(new AppError("Current password is wrong", 401));
+    }
+
+    // 2) Hash new password
+    const hashed = await bcrypt.hash(newPassword, 12);
+
+    // 3) Update
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashed,
+        passwordChangedAt: new Date(),
+      },
+    });
+
+    // 4) Send new token
+    createSendToken(updatedUser as any, 200, req, res);
+  },
+);
+
+export const resetPassword = (req: Request, res: Response): void => {
+  res.status(500).json({
+    status: "error",
+    message: "This route is not defined! Please use /signup instead",
+  });
+};
+
+export const forgotPassword = (req: Request, res: Response): void => {
+  res.status(500).json({
+    status: "error",
+    message: "This route is not defined! Please use /signup instead",
+  });
+};
