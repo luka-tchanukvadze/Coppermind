@@ -174,3 +174,47 @@ export const login = catchAsync(
     createSendToken(safeUser as any, 200, req, res);
   },
 );
+
+export const protect = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    let token: string | undefined;
+
+    // 1) Get token
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) {
+      return next(new AppError("You are not logged in.", 401));
+    }
+
+    // 2) Verify token
+    const decoded = (await promisify(jwt.verify)(
+      token,
+      process.env.JWT_SECRET as string,
+    )) as { id: number; iat: number };
+
+    // 3) Check if user still exists
+    const currentUser = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
+
+    if (!currentUser) {
+      return next(new AppError("User no longer exists.", 401));
+    }
+
+    // 4) Check if password changed after token
+    if (changedPasswordAfter(decoded.iat, currentUser as any)) {
+      return next(
+        new AppError("Password recently changed. Log in again.", 401),
+      );
+    }
+
+    // 5) Grant access
+    req.user = currentUser as any;
+    next();
+  },
+);
