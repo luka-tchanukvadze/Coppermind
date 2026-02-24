@@ -88,16 +88,24 @@ export const updateMe = catchAsync(
   },
 );
 
-export const deleteMe = (req: Request, res: Response): void => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not defined! Please use /signup instead",
-  });
-};
+export const deleteMe = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { active: false },
+    });
+
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  },
+);
 
 export const getAllUsers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const users = await prisma.user.findMany({
+      where: { active: true },
       select: {
         id: true,
         name: true,

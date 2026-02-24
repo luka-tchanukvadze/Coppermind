@@ -188,8 +188,8 @@ export const protect = catchAsync(
       where: { id: decoded.id },
     });
 
-    if (!currentUser) {
-      return next(new AppError("User no longer exists.", 401));
+    if (!currentUser || currentUser.active === false) {
+      return next(new AppError("The user no longer exists.", 401));
     }
 
     // 4) Check if password changed after token
