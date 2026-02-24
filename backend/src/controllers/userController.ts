@@ -50,9 +50,25 @@ export const deleteMe = (req: Request, res: Response): void => {
   });
 };
 
-export const getAllUsers = (req: Request, res: Response): void => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not defined! Please use /signup instead",
-  });
-};
+export const getAllUsers = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        photo: true,
+        role: true,
+        active: true,
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: users.length,
+      data: {
+        users,
+      },
+    });
+  },
+);
