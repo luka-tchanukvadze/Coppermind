@@ -1,5 +1,5 @@
 import express from "express";
-// import * as userController from "./../controllers/userController.js";
+import * as userController from "./../controllers/userController.js";
 import * as authController from "../controllers/authController.js";
 
 const router = express.Router();
@@ -13,5 +13,15 @@ router.patch("/resetPassword/:token", authController.resetPassword);
 router.use(authController.protect);
 
 router.patch("/updateMyPassword", authController.updatePassword);
+router.get("/me", userController.getMe, userController.getUser);
+router.patch("/updateMe", userController.updateMe);
+router.delete("/deleteMe", userController.deleteMe);
+
+// Restricting to all other routes after this middleware
+router.use(authController.restrictTo("admin"));
+
+router.route("/").get(userController.getAllUsers);
+
+router.route("/:id").get(userController.getUser);
 
 export default router;
