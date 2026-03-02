@@ -10,6 +10,7 @@ import { Role } from "../../generated/prisma/index.js";
 import catchAsync from "./../utils/catchAsync.js";
 import AppError from "./../utils/appError.js";
 import { User, DecodedToken } from "../../../types.d.js";
+import sendEmail from "./../utils/email.js";
 
 ////////////////////////////////////////
 ////////// PASSWORD HELPERS ////////////
@@ -252,16 +253,98 @@ export const updatePassword = catchAsync(
   },
 );
 
-export const resetPassword = (req: Request, res: Response): void => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not defined! Please use /signup instead",
-  });
-};
+export const forgotPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // 1) Get user based on posted email
+    const user = await prisma.user.findUnique({
+      where: { email: req.body.email },
+    });
 
-export const forgotPassword = (req: Request, res: Response): void => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not defined! Please use /signup instead",
-  });
-};
+    if (!user) {
+      return next(new AppError("There is no user with that email address.", 404));
+    }
+
+    // 2) Generate the random reset token
+    const { resetToken, hashedToken, expires } = createPasswordResetToken();
+
+    // 3) Save hashed token + expiry to DB
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: expires,
+      },
+    });
+
+    // 4) Send plain token to user's email
+    const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
+    const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Your password reset token (valid for 10 min)",
+        message,
+      });
+
+      res.status(200).json({
+        status: "success",
+        message: "Token sent to email!",
+      });
+    } catch (err) {
+      console.error("Email error:", err);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetToken: null,
+          passwordResetExpires: null,
+        },
+      });
+      return next(new AppError("There was an error sending the email. Try again later!", 500));
+    }
+  },
+);
+
+export const resetPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // 1) Hash the token from the URL and find the matching user
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(req.params.token as string)
+      .digest("hex");
+
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { gt: new Date() },
+      },
+    });
+
+    // 2) Token invalid or expired
+    if (!user) {
+      return next(new AppError("Token is invalid or has expired", 400));
+    }
+
+    const { password, passwordConfirm } = req.body;
+
+    if (!password || password !== passwordConfirm) {
+      return next(new AppError("Passwords do not match", 400));
+    }
+
+    // 3) Set new password and clear reset fields
+    const hashed = await bcrypt.hash(password, 12);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashed,
+        passwordChangedAt: new Date(),
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+    });
+
+    // 4) Log user in
+    createSendToken(updatedUser as User, 200, req, res);
+  },
+);
