@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -14,22 +8,177 @@ datasource db {
 }
 
 model User {
-  id                     Int       @id @default(autoincrement())
-  name                   String    @db.VarChar(255)
-  email                  String    @unique @db.VarChar(255)
-  photo                  String    @default("default.jpg") @db.VarChar(255)
-  role                   Role      @default(user)
-  password               String    @db.VarChar(255)
-  passwordChangedAt      DateTime? @map("password_changed_at")
-  passwordResetToken     String?   @map("password_reset_token") @db.VarChar(255)
-  passwordResetExpires   DateTime? @map("password_reset_expires")
-  active                 Boolean   @default(true)
+  id                   Int       @id @default(autoincrement())
+  name                 String    @db.VarChar(255)
+  email                String    @unique @db.VarChar(255)
+  photo                String    @default("default.jpg") @db.VarChar(255)
+  role                 Role      @default(user)
+  password             String    @db.VarChar(255)
+  passwordChangedAt    DateTime?
+  passwordResetToken   String?   @db.VarChar(255)
+  passwordResetExpires DateTime?
+  active               Boolean   @default(true)
+
+  userBooks            UserBook[]
+  customData           CustomData[]
+  sentRequests         FriendConnection[]  @relation("Requester")
+  receivedRequests     FriendConnection[]  @relation("Addressee")
+  messages             Message[]
+  conversations        ConversationParticipant[]
+  discussions          Discussion[]
+  comments             Comment[]
+  likes                Like[]
 
   @@map("users")
+}
+
+model Book {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(255)
+  author      String     @db.VarChar(255)
+  genres      String[]
+  coverImage  String     @db.VarChar(255)
+  externalApiId String?  @db.VarChar(255)
+
+  userBooks   UserBook[]
+
+  @@map("books")
+}
+
+model UserBook {
+  id                  Int       @id @default(autoincrement())
+  progress            Progress
+  isPrivate           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  progressUpdatedAt   DateTime? @updatedAt
+
+  userId              Int
+  user                User      @relation(fields: [userId], references: [id])
+  bookId              Int
+  book                Book      @relation(fields: [bookId], references: [id])
+
+  @@unique([userId, bookId])
+  @@map("user_books")
+}
+
+model CustomData {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  content     String
+  isPrivate   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("custom_data")
+}
+
+model FriendConnection {
+  id            Int      @id @default(autoincrement())
+  status        Status   @default(PENDING)
+  createdAt     DateTime @default(now())
+
+  requesterId   Int
+  requester     User     @relation("Requester", fields: [requesterId], references: [id])
+  addresseeId   Int
+  addressee     User     @relation("Addressee", fields: [addresseeId], references: [id])
+
+  @@unique([requesterId, addresseeId])
+  @@map("friend_connections")
+}
+
+model Conversation {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now())
+
+  participants  ConversationParticipant[]
+  messages      Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id              Int      @id @default(autoincrement())
+  text            String
+  createdAt       DateTime @default(now())
+
+  userId          Int
+  user            User         @relation(fields: [userId], references: [id])
+  conversationId  Int
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+}
+
+model ConversationParticipant {
+  id              Int  @id @default(autoincrement())
+
+  userId          Int
+  user            User         @relation(fields: [userId], references: [id])
+  conversationId  Int
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+
+  @@unique([userId, conversationId])
+  @@map("conversation_participants")
+}
+
+model Discussion {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  creatorId   Int
+  creator     User      @relation(fields: [creatorId], references: [id])
+  comments    Comment[]
+  likes       Like[]
+
+  @@map("discussions")
+}
+
+model Comment {
+  id            Int      @id @default(autoincrement())
+  content       String
+  createdAt     DateTime @default(now())
+
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id])
+  discussionId  Int
+  discussion    Discussion @relation(fields: [discussionId], references: [id])
+
+  @@map("comments")
+}
+
+model Like {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id])
+  discussionId  Int
+  discussion    Discussion @relation(fields: [discussionId], references: [id])
+
+  @@unique([userId, discussionId])
+  @@map("likes")
 }
 
 enum Role {
   user
   author
   admin
+}
+
+enum Progress {
+  WANT_TO_READ
+  READING
+  READ
+}
+
+enum Status {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
