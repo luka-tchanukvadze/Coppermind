@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id                   Int       @id @default(autoincrement())
+  id                   String    @id @default(uuid())
   name                 String    @db.VarChar(255)
   email                String    @unique @db.VarChar(255)
   photo                String    @default("default.jpg") @db.VarChar(255)
@@ -33,28 +33,28 @@ model User {
 }
 
 model Book {
-  id          Int        @id @default(autoincrement())
-  title       String     @db.VarChar(255)
-  author      String     @db.VarChar(255)
-  genres      String[]
-  coverImage  String     @db.VarChar(255)
-  externalApiId String?  @db.VarChar(255)
+  id            String     @id @default(uuid())
+  title         String     @db.VarChar(255)
+  author        String     @db.VarChar(255)
+  genres        String[]
+  coverImage    String     @db.VarChar(255)
+  externalApiId String?    @db.VarChar(255)
 
-  userBooks   UserBook[]
+  userBooks     UserBook[]
 
   @@map("books")
 }
 
 model UserBook {
-  id                  Int       @id @default(autoincrement())
+  id                  String    @id @default(uuid())
   progress            Progress
   isPrivate           Boolean   @default(false)
   createdAt           DateTime  @default(now())
   progressUpdatedAt   DateTime? @updatedAt
 
-  userId              Int
+  userId              String
   user                User      @relation(fields: [userId], references: [id])
-  bookId              Int
+  bookId              String
   book                Book      @relation(fields: [bookId], references: [id])
 
   @@unique([userId, bookId])
@@ -62,27 +62,27 @@ model UserBook {
 }
 
 model CustomData {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(uuid())
   title       String    @db.VarChar(255)
   content     String
   isPrivate   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
 
-  userId      Int
+  userId      String
   user        User      @relation(fields: [userId], references: [id])
 
   @@map("custom_data")
 }
 
 model FriendConnection {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   status        Status   @default(PENDING)
   createdAt     DateTime @default(now())
 
-  requesterId   Int
+  requesterId   String
   requester     User     @relation("Requester", fields: [requesterId], references: [id])
-  addresseeId   Int
+  addresseeId   String
   addressee     User     @relation("Addressee", fields: [addresseeId], references: [id])
 
   @@unique([requesterId, addresseeId])
@@ -90,7 +90,7 @@ model FriendConnection {
 }
 
 model Conversation {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(uuid())
   createdAt     DateTime  @default(now())
 
   participants  ConversationParticipant[]
@@ -100,24 +100,24 @@ model Conversation {
 }
 
 model Message {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(uuid())
   text            String
   createdAt       DateTime @default(now())
 
-  userId          Int
+  userId          String
   user            User         @relation(fields: [userId], references: [id])
-  conversationId  Int
+  conversationId  String
   conversation    Conversation @relation(fields: [conversationId], references: [id])
 
   @@map("messages")
 }
 
 model ConversationParticipant {
-  id              Int  @id @default(autoincrement())
+  id              String @id @default(uuid())
 
-  userId          Int
+  userId          String
   user            User         @relation(fields: [userId], references: [id])
-  conversationId  Int
+  conversationId  String
   conversation    Conversation @relation(fields: [conversationId], references: [id])
 
   @@unique([userId, conversationId])
@@ -125,13 +125,13 @@ model ConversationParticipant {
 }
 
 model Discussion {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(uuid())
   title       String    @db.VarChar(255)
   description String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  creatorId   Int
+  creatorId   String
   creator     User      @relation(fields: [creatorId], references: [id])
   comments    Comment[]
   likes       Like[]
@@ -140,25 +140,25 @@ model Discussion {
 }
 
 model Comment {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   content       String
   createdAt     DateTime @default(now())
 
-  userId        Int
+  userId        String
   user          User       @relation(fields: [userId], references: [id])
-  discussionId  Int
+  discussionId  String
   discussion    Discussion @relation(fields: [discussionId], references: [id])
 
   @@map("comments")
 }
 
 model Like {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   createdAt     DateTime @default(now())
 
-  userId        Int
+  userId        String
   user          User       @relation(fields: [userId], references: [id])
-  discussionId  Int
+  discussionId  String
   discussion    Discussion @relation(fields: [discussionId], references: [id])
 
   @@unique([userId, discussionId])
