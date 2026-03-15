@@ -2,7 +2,7 @@ import { Role } from "./backend/generated/prisma/index.js";
 
 // Define a custom interface for the User object
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   photo?: string | null;
@@ -16,7 +16,7 @@ export interface User {
 
 // Define a custom interface for the Decoded JWT Token
 export interface DecodedToken {
-  id: number;
+  id: string;
   iat: number;
   exp: number;
 }
