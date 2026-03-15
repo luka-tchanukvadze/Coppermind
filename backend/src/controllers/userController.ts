@@ -16,7 +16,7 @@ const filterObj = (obj: any, ...allowedFields: string[]) => {
 };
 
 export const getMe = (req: Request, res: Response, next: NextFunction) => {
-  req.params.id = req.user!.id.toString();
+  req.params.id = req.user!.id;
   next();
 };
 //////////////////////////////////
@@ -25,10 +25,10 @@ export const getMe = (req: Request, res: Response, next: NextFunction) => {
 
 export const getUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const user = await prisma.user.findUnique({
-      where: { id: Number(id) },
+      where: { id },
       select: {
         id: true,
         name: true,
