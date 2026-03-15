@@ -30,7 +30,7 @@ const correctPassword = async (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-const signToken = (id: number): string => {
+const signToken = (id: string): string => {
   const secret = process.env.JWT_SECRET;
   const expiresIn: any = process.env.JWT_EXPIRES_IN;
 
