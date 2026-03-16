@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import prisma from "./prisma.js";
 import userRouter from "./routes/userRoutes.js";
+import bookRouter from "./routes/bookRoutes.js";
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
 import morgan from "morgan";
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/books", bookRouter);
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
