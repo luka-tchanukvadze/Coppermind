@@ -80,14 +80,21 @@ const createSendToken = (
     ),
     httpOnly: true,
     secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+    sameSite: "lax",
   });
 
-  user.password = undefined as any;
+  const safeUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    photo: user.photo,
+  };
 
   res.status(statusCode).json({
     status: "success",
     token,
-    data: { user },
+    data: { safeUser },
   });
 };
 
@@ -165,6 +172,8 @@ export const protect = catchAsync(
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
     }
 
     if (!token) {
@@ -218,6 +227,9 @@ export const updatePassword = catchAsync(
     if (!newPassword || newPassword !== newPasswordConfirm) {
       return next(new AppError("Passwords do not match", 400));
     }
+    if (newPassword.length < 8) {
+      return next(new AppError("Password length should be >= 8", 400));
+    }
 
     // 1) Get user with password
     const user = await prisma.user.findUnique({
@@ -254,9 +266,10 @@ export const forgotPassword = catchAsync(
     });
 
     if (!user) {
-      return next(
-        new AppError("There is no user with that email address.", 404),
-      );
+      return res.status(200).json({
+        status: "success",
+        message: "If that email is registered, a reset link was sent!",
+      });
     }
 
     // 2) Generate the random reset token
@@ -272,7 +285,7 @@ export const forgotPassword = catchAsync(
     });
 
     // 4) Send plain token to user's email
-    const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
+    const resetURL = `${process.env.APP_URL}/api/v1/users/resetPassword/${resetToken}`;
     const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
 
     try {
@@ -329,6 +342,9 @@ export const resetPassword = catchAsync(
 
     if (!password || password !== passwordConfirm) {
       return next(new AppError("Passwords do not match", 400));
+    }
+    if (password.length < 8) {
+      return next(new AppError("Password length should be >= 8", 400));
     }
 
     // 3) Set new password and clear reset fields
