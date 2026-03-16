@@ -16,13 +16,6 @@ import sendEmail from "./../utils/email.js";
 ////////// PASSWORD HELPERS ////////////
 ////////////////////////////////////////
 
-const hashPasswordIfModified = async (user: User): Promise<User> => {
-  if (!user.password) return user;
-
-  user.password = await bcrypt.hash(user.password, 12);
-  return user;
-};
-
 const correctPassword = async (
   candidatePassword: string,
   userPassword: string,
@@ -104,7 +97,7 @@ const createSendToken = (
 export const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // 1) Extract fields and check password confirmation
-    const { name, email, password, password_confirm, role, photo } = req.body;
+    const { name, email, password, password_confirm, photo } = req.body;
 
     if (!password || !password_confirm || password !== password_confirm) {
       return next(new AppError("Passwords do not match", 400));
@@ -119,7 +112,7 @@ export const signup = catchAsync(
         name,
         email,
         password: hashedPassword,
-        role: role ? (role.toLowerCase() as Role) : Role.user,
+        role: Role.user,
         photo,
       },
     });
@@ -261,7 +254,9 @@ export const forgotPassword = catchAsync(
     });
 
     if (!user) {
-      return next(new AppError("There is no user with that email address.", 404));
+      return next(
+        new AppError("There is no user with that email address.", 404),
+      );
     }
 
     // 2) Generate the random reset token
@@ -300,7 +295,12 @@ export const forgotPassword = catchAsync(
           passwordResetExpires: null,
         },
       });
-      return next(new AppError("There was an error sending the email. Try again later!", 500));
+      return next(
+        new AppError(
+          "There was an error sending the email. Try again later!",
+          500,
+        ),
+      );
     }
   },
 );
