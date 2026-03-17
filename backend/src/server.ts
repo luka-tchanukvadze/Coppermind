@@ -15,6 +15,7 @@ dotenv.config();
 
 import app from "./app.js";
 import prisma from "./prisma.js";
+import redisClient from "./redisClient.js";
 
 const PORT = Number(process.env.PORT) || 5001;
 
@@ -26,6 +27,13 @@ const server: Server = app.listen(PORT, async () => {
     console.error("Failed to connect to the database:", error);
     process.exit(1);
   }
+
+  try {
+    await redisClient.connect();
+  } catch (error) {
+    console.error("Failed to connect to Redis:", error);
+  }
+
   console.log(`Server is running on port ${PORT}`);
 });
 
