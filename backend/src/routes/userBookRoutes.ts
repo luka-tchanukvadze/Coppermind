@@ -10,7 +10,7 @@ router.use(authController.protect);
 
 router
   .route("/")
-  .post(authController.restrictTo("admin"), userBookController.addUserBook)
+  .post(userBookController.addUserBook)
   .get(userBookController.getUserBooks);
 
 export default router;

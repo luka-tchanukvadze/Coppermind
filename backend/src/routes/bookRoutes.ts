@@ -8,6 +8,9 @@ const router = express.Router();
 // Protect all other routes after this middleware
 router.use(authController.protect);
 
-router.route("/").post(bookController.addBook).get(bookController.getAllBooks);
+router
+  .route("/")
+  .post(authController.restrictTo("admin"), bookController.addBook)
+  .get(bookController.getAllBooks);
 
 export default router;
