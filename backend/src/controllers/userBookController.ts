@@ -137,27 +137,20 @@ export const getUserBook = catchAsync(
 
 export const deleteUserBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    // Get the userBook ID from the URL and the logged-in user's ID
     const id = req.params.id as string;
     const userId = req.user!.id;
 
-    // Delete the userBook record (the book itself stays in the catalog)
+    // deleteMany with both id + userId acts as an ownership check in one query
     const result = await prisma.userBook.deleteMany({
-      where: {
-        id,
-        userId,
-      },
+      where: { id, userId },
     });
 
     if (result.count === 0)
       return next(new AppError("No book found with that ID", 404));
 
-    // Invalidate this user's cache only — the global books cache is unaffected
+    // Only invalidate this user's cache - book catalog is unchanged
     await redisClient.del(getUserBooksCacheKey(userId));
 
-    // Send 204 (no content) response
-    res.status(204).json({
-      status: "success",
-    });
+    res.status(204).json({});
   },
 );
