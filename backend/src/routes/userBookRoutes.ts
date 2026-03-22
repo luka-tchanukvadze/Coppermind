@@ -19,4 +19,6 @@ router
   .delete(userBookController.deleteUserBook)
   .patch(userBookController.updateUserBook);
 
+router.get("/user/:userId", userBookController.getPublicUserBooks);
+
 export default router;

@@ -6,6 +6,7 @@ import userBookRouter from "./routes/userBookRoutes.js";
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -16,6 +17,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.use("/api/v1/users", userRouter);

@@ -186,3 +186,21 @@ export const updateUserBook = catchAsync(
     });
   },
 );
+
+// Public endpoint - returns only non-private books for a given user
+export const getPublicUserBooks = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.params.userId as string;
+
+    const friendBooks = await prisma.userBook.findMany({
+      where: { userId, isPrivate: false },
+      include: { book: true },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: friendBooks.length,
+      data: { friendBooks },
+    });
+  },
+);
