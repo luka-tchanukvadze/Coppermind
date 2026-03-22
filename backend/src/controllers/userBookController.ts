@@ -9,8 +9,7 @@ const getUserBooksCacheKey = (userId: string) => `user_books:${userId}`;
 
 export const addUserBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.user?.id;
-    if (!userId) return next(new AppError("You are not logged in", 401));
+    const userId = req.user!.id;
 
     const {
       title,
@@ -52,8 +51,7 @@ export const addUserBook = catchAsync(
 
 export const getUserBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.user?.id;
-    if (!userId) return next(new AppError("You are not logged in", 401));
+    const userId = req.user!.id;
 
     // Return cached data if available
     const cachedUserBooks = await redisClient.get(getUserBooksCacheKey(userId));
@@ -92,6 +90,47 @@ export const getUserBooks = catchAsync(
       data: {
         userBooks,
       },
+    });
+  },
+);
+
+export const getUserBook = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+    const userId = req.user!.id;
+
+    // Check the cached list first
+    const cachedUserBooks = await redisClient.get(getUserBooksCacheKey(userId));
+
+    if (cachedUserBooks) {
+      const userBook = JSON.parse(cachedUserBooks).find(
+        (ub: any) => ub.id === id,
+      );
+
+      if (!userBook)
+        return next(new AppError("No book found with that ID", 404));
+
+      return res.status(200).json({
+        status: "success",
+        source: "cache",
+        data: { userBook },
+      });
+    }
+
+    // Fall back to DB
+    const userBook = await prisma.userBook.findUnique({
+      where: { id },
+      include: { book: true },
+    });
+
+    // Verify it exists and belongs to this user
+    if (!userBook || userBook.userId !== userId)
+      return next(new AppError("No book found with that ID", 404));
+
+    res.status(200).json({
+      status: "success",
+      source: "database",
+      data: { userBook },
     });
   },
 );

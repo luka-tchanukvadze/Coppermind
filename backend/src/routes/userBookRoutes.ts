@@ -13,4 +13,6 @@ router
   .post(userBookController.addUserBook)
   .get(userBookController.getUserBooks);
 
+router.route("/:id").get(userBookController.getUserBook);
+
 export default router;
