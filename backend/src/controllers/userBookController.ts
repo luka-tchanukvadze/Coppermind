@@ -34,9 +34,12 @@ export const addUserBook = catchAsync(
       data: { userId, bookId: book.id, progress, isPrivate },
     });
 
-    // Invalidate both caches since data changed
-    await redisClient.del(BOOKS_CACHE_KEY);
-    await redisClient.del(getUserBooksCacheKey(userId));
+    // Invalidate both caches in a single pipeline (one round trip)
+    await redisClient
+      .multi()
+      .del(BOOKS_CACHE_KEY)
+      .del(getUserBooksCacheKey(userId))
+      .exec();
 
     res.status(201).json({
       status: "success",
