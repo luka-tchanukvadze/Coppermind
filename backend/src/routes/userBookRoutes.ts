@@ -11,11 +11,12 @@ router.use(authController.protect);
 router
   .route("/")
   .post(userBookController.addUserBook)
-  .get(userBookController.getUserBooks);
+  .get(userBookController.getAllUserBooks);
 
 router
   .route("/:id")
   .get(userBookController.getUserBook)
-  .delete(userBookController.deleteUserBook);
+  .delete(userBookController.deleteUserBook)
+  .patch(userBookController.updateUserBook);
 
 export default router;

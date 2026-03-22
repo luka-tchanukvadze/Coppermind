@@ -49,7 +49,7 @@ export const addUserBook = catchAsync(
   },
 );
 
-export const getUserBooks = catchAsync(
+export const getAllUserBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
 
@@ -152,5 +152,37 @@ export const deleteUserBook = catchAsync(
     await redisClient.del(getUserBooksCacheKey(userId));
 
     res.status(204).json({});
+  },
+);
+
+export const updateUserBook = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+    const userId = req.user!.id;
+
+    // Only these fields are user-editable
+    const { progress, isPrivate } = req.body;
+
+    // Ownership check + update in one query
+    const result = await prisma.userBook.updateMany({
+      where: { id, userId },
+      data: { progress, isPrivate },
+    });
+
+    if (result.count === 0)
+      return next(new AppError("No book found with that ID", 404));
+
+    await redisClient.del(getUserBooksCacheKey(userId));
+
+    // updateMany returns count only - fetch the full record to return it
+    const updatedBook = await prisma.userBook.findUnique({
+      where: { id },
+      include: { book: true },
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: { userBook: updatedBook },
+    });
   },
 );
