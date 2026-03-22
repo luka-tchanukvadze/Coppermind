@@ -13,6 +13,9 @@ router
   .post(userBookController.addUserBook)
   .get(userBookController.getUserBooks);
 
-router.route("/:id").get(userBookController.getUserBook);
+router
+  .route("/:id")
+  .get(userBookController.getUserBook)
+  .delete(userBookController.deleteUserBook);
 
 export default router;
