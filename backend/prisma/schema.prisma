@@ -56,6 +56,7 @@ model UserBook {
   user                User      @relation(fields: [userId], references: [id])
   bookId              String
   book                Book      @relation(fields: [bookId], references: [id])
+  customData          CustomData[]
 
   @@unique([userId, bookId])
   @@map("user_books")
@@ -71,6 +72,8 @@ model CustomData {
 
   userId      String
   user        User      @relation(fields: [userId], references: [id])
+  userBookId  String
+  userBook    UserBook   @relation(fields: [userBookId], references: [id])
 
   @@map("custom_data")
 }
