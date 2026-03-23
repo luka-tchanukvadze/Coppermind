@@ -120,7 +120,7 @@ export const getUserBook = catchAsync(
     // Fall back to DB
     const userBook = await prisma.userBook.findUnique({
       where: { id },
-      include: { book: true },
+      include: { book: true, customData: true },
     });
 
     // Verify it exists and belongs to this user
@@ -212,15 +212,28 @@ export const addCustomData = catchAsync(
     const userBookId = req.params.id as string;
     const userId = req.user!.id;
 
-    // 1. Verify the userBook exists and belongs to this user
+    // Ownership check before allowing custom data creation
+    const userBook = await prisma.userBook.findUnique({
+      where: { id: userBookId },
+    });
 
-    // 2. Destructure title, content, isPrivate from req.body
+    if (!userBook || userBook.userId !== userId)
+      return next(new AppError("No book found with that ID", 404));
 
-    // 3. Create the custom data linked to both the user and the userBook
+    const { title, content, isPrivate } = req.body;
 
-    // 4. Invalidate this user's cache
+    const customData = await prisma.customData.create({
+      data: { title, content, isPrivate, userBookId, userId },
+    });
 
-    // 5. Send 201 response with the created custom data
+    await redisClient.del(getUserBooksCacheKey(userId));
+
+    res.status(201).json({
+      status: "success",
+      data: {
+        customData,
+      },
+    });
   },
 );
 
