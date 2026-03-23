@@ -21,4 +21,15 @@ router
 
 router.get("/user/:userId", userBookController.getPublicUserBooks);
 
+// Custom data nested under a userBook
+router
+  .route("/:id/custom-data")
+  .post(userBookController.addCustomData)
+  .get(userBookController.getCustomData);
+
+router
+  .route("/:id/custom-data/:dataId")
+  .patch(userBookController.updateCustomData)
+  .delete(userBookController.deleteCustomData);
+
 export default router;

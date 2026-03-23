@@ -204,3 +204,67 @@ export const getPublicUserBooks = catchAsync(
     });
   },
 );
+
+// ─── Custom Data CRUD (nested under a userBook) ───
+
+export const addCustomData = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userBookId = req.params.id as string;
+    const userId = req.user!.id;
+
+    // 1. Verify the userBook exists and belongs to this user
+
+    // 2. Destructure title, content, isPrivate from req.body
+
+    // 3. Create the custom data linked to both the user and the userBook
+
+    // 4. Invalidate this user's cache
+
+    // 5. Send 201 response with the created custom data
+  },
+);
+
+export const getCustomData = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userBookId = req.params.id as string;
+    const userId = req.user!.id;
+
+    // 1. Verify the userBook exists and belongs to this user
+
+    // 2.  Fetch all custom data for this userBook
+
+    // 3. Send response with the list
+  },
+);
+
+export const updateCustomData = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const dataId = req.params.dataId as string;
+    const userId = req.user!.id;
+
+    // 1. Only allow title, content, isPrivate to be updated
+
+    // 2. Update with ownership check (where: { id: dataId, userId })
+
+    // 3. If nothing updated, return 404
+
+    // 4. Invalidate this user's cache
+
+    // 5. Fetch and return the updated record
+  },
+);
+
+export const deleteCustomData = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const dataId = req.params.dataId as string;
+    const userId = req.user!.id;
+
+    // 1. Delete with ownership check (where: { id: dataId, userId })
+
+    // 2. If nothing deleted, return 404
+
+    // 3. Invalidate this user's cache
+
+    // 4. Send 204 response
+  },
+);
