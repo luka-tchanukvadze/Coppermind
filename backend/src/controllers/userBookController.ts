@@ -262,15 +262,28 @@ export const updateCustomData = catchAsync(
     const dataId = req.params.dataId as string;
     const userId = req.user!.id;
 
-    // 1. Only allow title, content, isPrivate to be updated
+    const { title, content, isPrivate } = req.body;
 
-    // 2. Update with ownership check (where: { id: dataId, userId })
+    // Ownership check + update in one query - only updates if both id and userId match
+    const result = await prisma.customData.updateMany({
+      where: { id: dataId, userId },
+      data: { title, content, isPrivate },
+    });
 
-    // 3. If nothing updated, return 404
+    if (result.count === 0)
+      return next(new AppError("No custom data found with that ID", 404));
 
-    // 4. Invalidate this user's cache
+    await redisClient.del(getUserBooksCacheKey(userId));
 
-    // 5. Fetch and return the updated record
+    // updateMany returns count only - fetch the full record to return
+    const updatedData = await prisma.customData.findUnique({
+      where: { id: dataId },
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: { customData: updatedData },
+    });
   },
 );
 
