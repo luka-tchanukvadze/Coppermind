@@ -239,14 +239,21 @@ export const addCustomData = catchAsync(
 
 export const getCustomData = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userBookId = req.params.id as string;
+    const dataId = req.params.dataId as string;
     const userId = req.user!.id;
 
-    // 1. Verify the userBook exists and belongs to this user
+    // Fetch by dataId and verify it belongs to this user
+    const customData = await prisma.customData.findUnique({
+      where: { id: dataId },
+    });
 
-    // 2.  Fetch all custom data for this userBook
+    if (!customData || customData.userId !== userId)
+      return next(new AppError("No custom data found with that ID", 404));
 
-    // 3. Send response with the list
+    res.status(200).json({
+      status: "success",
+      data: { customData },
+    });
   },
 );
 

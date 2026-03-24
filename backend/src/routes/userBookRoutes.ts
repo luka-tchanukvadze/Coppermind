@@ -22,13 +22,13 @@ router
 router.get("/user/:userId", userBookController.getPublicUserBooks);
 
 // Custom data nested under a userBook
-router
-  .route("/:id/custom-data")
-  .post(userBookController.addCustomData)
-  .get(userBookController.getCustomData);
+// :id = userBook ID (the book in a list)
+router.route("/:id/custom-data").post(userBookController.addCustomData);
 
+// :dataId = custom data ID (a specific note on that book)
 router
   .route("/:id/custom-data/:dataId")
+  .get(userBookController.getCustomData)
   .patch(userBookController.updateCustomData)
   .delete(userBookController.deleteCustomData);
 
