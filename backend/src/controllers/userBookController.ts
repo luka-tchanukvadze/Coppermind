@@ -292,12 +292,16 @@ export const deleteCustomData = catchAsync(
     const dataId = req.params.dataId as string;
     const userId = req.user!.id;
 
-    // 1. Delete with ownership check (where: { id: dataId, userId })
+    // Ownership check + delete in one query
+    const result = await prisma.customData.deleteMany({
+      where: { id: dataId, userId },
+    });
 
-    // 2. If nothing deleted, return 404
+    if (result.count === 0)
+      return next(new AppError("No custom data found with that ID", 404));
 
-    // 3. Invalidate this user's cache
+    await redisClient.del(getUserBooksCacheKey(userId));
 
-    // 4. Send 204 response
+    res.status(204).json({});
   },
 );
