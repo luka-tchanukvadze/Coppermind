@@ -187,7 +187,10 @@ export const updateUserBook = catchAsync(
   },
 );
 
+//////////////////////
 // Public endpoint - returns only non-private books for a given user
+//////////////////////
+
 export const getPublicUserBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userId as string;
@@ -205,7 +208,9 @@ export const getPublicUserBooks = catchAsync(
   },
 );
 
+//////////////////////
 // ─── Custom Data CRUD (nested under a userBook) ───
+//////////////////////
 
 export const addCustomData = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {

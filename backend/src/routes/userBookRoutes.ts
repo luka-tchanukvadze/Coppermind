@@ -8,6 +8,7 @@ const router = express.Router();
 // Protect all other routes after this middleware
 router.use(authController.protect);
 
+// ─── 1. My Books — CRUD for the logged-in user's book list ───
 router
   .route("/")
   .post(userBookController.addUserBook)
@@ -19,13 +20,13 @@ router
   .delete(userBookController.deleteUserBook)
   .patch(userBookController.updateUserBook);
 
+// ─── 2. Public — view another user's books (private entries hidden) ───
 router.get("/user/:userId", userBookController.getPublicUserBooks);
 
-// Custom data nested under a userBook
-// :id = userBook ID (the book in a list)
+// ─── 3. Custom Data — notes/entries attached to a specific book ───
+// :id = userBook ID, :dataId = custom data entry ID
 router.route("/:id/custom-data").post(userBookController.addCustomData);
 
-// :dataId = custom data ID (a specific note on that book)
 router
   .route("/:id/custom-data/:dataId")
   .get(userBookController.getCustomData)
