@@ -3,9 +3,17 @@ import catchAsync from "../utils/catchAsync.js";
 import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
 import redisClient from "../redisClient.js";
+import APIFeatures from "../utils/apiFeatures.js";
 
 const BOOKS_CACHE_KEY = "all_books";
-const getUserBooksCacheKey = (userId: string) => `user_books:${userId}`;
+
+// Fields that can be filtered, sorted, and selected on userBooks
+const USER_BOOK_ALLOWED_FIELDS = [
+  "progress",
+  "isPrivate",
+  "createdAt",
+  "progressUpdatedAt",
+];
 
 export const addUserBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -33,12 +41,8 @@ export const addUserBook = catchAsync(
       data: { userId, bookId: book.id, progress, isPrivate },
     });
 
-    // Invalidate both caches in a single pipeline (one round trip)
-    await redisClient
-      .multi()
-      .del(BOOKS_CACHE_KEY)
-      .del(getUserBooksCacheKey(userId))
-      .exec();
+    // Invalidate global books cache since upsert may have added a new book
+    await redisClient.del(BOOKS_CACHE_KEY);
 
     res.status(201).json({
       status: "success",
@@ -53,39 +57,22 @@ export const getAllUserBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
 
-    // Return cached data if available
-    const cachedUserBooks = await redisClient.get(getUserBooksCacheKey(userId));
+    const features = new APIFeatures(req.query, USER_BOOK_ALLOWED_FIELDS)
+      .filter()
+      .sort()
+      .fields()
+      .paginate();
 
-    if (cachedUserBooks) {
-      const userBooks = JSON.parse(cachedUserBooks);
+    const query = features.build();
+    query.where = { ...query.where, userId };
 
-      return res.status(200).json({
-        status: "success",
-        source: "cache",
-        results: userBooks.length,
-        data: {
-          userBooks,
-        },
-      });
-    }
-
-    // Fetch from DB and cache for 24h
     const userBooks = await prisma.userBook.findMany({
-      where: { userId },
-      include: { book: true },
+      ...query,
+      include: query.select ? undefined : { book: true },
     });
-
-    await redisClient.set(
-      getUserBooksCacheKey(userId),
-      JSON.stringify(userBooks),
-      {
-        EX: 86400,
-      },
-    );
 
     res.status(200).json({
       status: "success",
-      source: "database",
       results: userBooks.length,
       data: {
         userBooks,
@@ -99,37 +86,16 @@ export const getUserBook = catchAsync(
     const id = req.params.id as string;
     const userId = req.user!.id;
 
-    // Check the cached list first
-    const cachedUserBooks = await redisClient.get(getUserBooksCacheKey(userId));
-
-    if (cachedUserBooks) {
-      const userBook = JSON.parse(cachedUserBooks).find(
-        (ub: any) => ub.id === id,
-      );
-
-      if (!userBook)
-        return next(new AppError("No book found with that ID", 404));
-
-      return res.status(200).json({
-        status: "success",
-        source: "cache",
-        data: { userBook },
-      });
-    }
-
-    // Fall back to DB
     const userBook = await prisma.userBook.findUnique({
       where: { id },
       include: { book: true, customData: true },
     });
 
-    // Verify it exists and belongs to this user
-    if (!userBook || userBook.userId !== userId)
-      return next(new AppError("No book found with that ID", 404));
+    // Verify it exists and belongs to this user    if (!userBook || userBook.userId !== userId)
+    return next(new AppError("No book found with that ID", 404));
 
     res.status(200).json({
       status: "success",
-      source: "database",
       data: { userBook },
     });
   },
@@ -147,9 +113,6 @@ export const deleteUserBook = catchAsync(
 
     if (result.count === 0)
       return next(new AppError("No book found with that ID", 404));
-
-    // Only invalidate this user's cache - book catalog is unchanged
-    await redisClient.del(getUserBooksCacheKey(userId));
 
     res.status(204).json({});
   },
@@ -172,8 +135,6 @@ export const updateUserBook = catchAsync(
     if (result.count === 0)
       return next(new AppError("No book found with that ID", 404));
 
-    await redisClient.del(getUserBooksCacheKey(userId));
-
     // updateMany returns count only - fetch the full record to return it
     const updatedBook = await prisma.userBook.findUnique({
       where: { id },
@@ -195,9 +156,19 @@ export const getPublicUserBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userId as string;
 
+    const features = new APIFeatures(req.query, USER_BOOK_ALLOWED_FIELDS)
+      .filter()
+      .sort()
+      .fields()
+      .paginate();
+
+    const query = features.build();
+    // Always enforce: only this user's public books
+    query.where = { ...query.where, userId, isPrivate: false };
+
     const friendBooks = await prisma.userBook.findMany({
-      where: { userId, isPrivate: false },
-      include: { book: true },
+      ...query,
+      include: query.select ? undefined : { book: true },
     });
 
     res.status(200).json({
@@ -230,8 +201,6 @@ export const addCustomData = catchAsync(
     const customData = await prisma.customData.create({
       data: { title, content, isPrivate, userBookId, userId },
     });
-
-    await redisClient.del(getUserBooksCacheKey(userId));
 
     res.status(201).json({
       status: "success",
@@ -278,8 +247,6 @@ export const updateCustomData = catchAsync(
     if (result.count === 0)
       return next(new AppError("No custom data found with that ID", 404));
 
-    await redisClient.del(getUserBooksCacheKey(userId));
-
     // updateMany returns count only - fetch the full record to return
     const updatedData = await prisma.customData.findUnique({
       where: { id: dataId },
@@ -304,8 +271,6 @@ export const deleteCustomData = catchAsync(
 
     if (result.count === 0)
       return next(new AppError("No custom data found with that ID", 404));
-
-    await redisClient.del(getUserBooksCacheKey(userId));
 
     res.status(204).json({});
   },
