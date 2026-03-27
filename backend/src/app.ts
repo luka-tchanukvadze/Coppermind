@@ -24,6 +24,11 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/books", bookRouter);
 app.use("/api/v1/user-books", userBookRouter);
 
+// TODO: Add remaining routes:
+// - /api/v1/friends       (FriendConnection: send/accept/reject/remove, list friends)
+// - /api/v1/discussions    (Discussion + Comment + Like: community forum)
+// - /api/v1/conversations  (Conversation + Message: real-time messaging)
+
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
