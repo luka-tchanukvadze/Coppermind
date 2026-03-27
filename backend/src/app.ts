@@ -1,10 +1,12 @@
 import express, { Request, Response, NextFunction } from "express";
-import prisma from "./prisma.js";
 import userRouter from "./routes/userRoutes.js";
 import bookRouter from "./routes/bookRoutes.js";
 import userBookRouter from "./routes/userBookRoutes.js";
+import friendRouter from "./routes/friendRoutes.js";
+
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
+
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
@@ -23,6 +25,7 @@ app.use(cookieParser());
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/books", bookRouter);
 app.use("/api/v1/user-books", userBookRouter);
+app.use("/api/v1/friends", friendRouter);
 
 // TODO: Add remaining routes:
 // - /api/v1/friends       (FriendConnection: send/accept/reject/remove, list friends)
