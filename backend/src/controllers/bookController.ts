@@ -6,10 +6,17 @@ import redisClient from "../redisClient.js";
 
 const BOOKS_CACHE_KEY = "all_books";
 
+//////////////////////
+// Admin-only controller for managing the global book catalog (used for recommendations).
+// Not exposed to front-end users.
+//////////////////////
+
 export const addBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const { title, author, genres, coverImage, externalApiId } = req.body;
+
     const data = await prisma.book.create({
-      data: req.body,
+      data: { title, author, genres, coverImage, externalApiId },
     });
 
     // Invalidate cache - the list is now stale
@@ -45,7 +52,10 @@ export const getAllBooks = catchAsync(
     const data = await prisma.book.findMany();
 
     // Cache the result for 24 hours
-    await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(data), { EX: 86400 });
+    // 604800 - a week
+    await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(data), {
+      EX: 604800,
+    });
 
     res.status(200).json({
       status: "success",

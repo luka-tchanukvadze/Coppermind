@@ -5,6 +5,7 @@ import * as bookController from "../controllers/bookController.js";
 
 const router = express.Router();
 
+// Admin-only catalog routes (used for recommendations, not exposed to front-end)
 // Protect all other routes after this middleware
 router.use(authController.protect);
 
