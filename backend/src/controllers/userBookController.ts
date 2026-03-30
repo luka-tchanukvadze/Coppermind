@@ -91,8 +91,9 @@ export const getUserBook = catchAsync(
       include: { book: true, customData: true },
     });
 
-    // Verify it exists and belongs to this user    if (!userBook || userBook.userId !== userId)
-    return next(new AppError("No book found with that ID", 404));
+    // Verify it exists and belongs to this user
+    if (!userBook || userBook.userId !== userId)
+      return next(new AppError("No book found with that ID", 404));
 
     res.status(200).json({
       status: "success",
