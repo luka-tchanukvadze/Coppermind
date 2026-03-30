@@ -20,12 +20,12 @@ delete    /friends/:id                 // reject request OR remove friend (same 
 
 ✅ sendRequest  everything starts here
 
-getIncomingRequests - so you can see what to accept/reject
+getIncomingRequests 
 acceptRequest
 rejectRequest (delete)
 getFriends - list accepted friends
 removeFriend (delete)
-getMutualFriends - nice-to-have, last
+getMutualFriends 
 */
 router.route("/:friendId").post(friendController.sendRequest);
 
