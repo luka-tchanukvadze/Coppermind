@@ -10,18 +10,18 @@ router.use(authController.protect);
 /*
 TODO:
 ✅ post      /freinds/:friendId             // send request
+✅get       /friends/requests            // list my pending incoming requests
 
-get       /friends/requests            // list my pending incoming requests
-patch     /friends/:id/accept          // accept request
-delete    /friends/:id                 // reject request OR remove friend (same action: delete the row)
+patch     /friends/:frinedId/accept          // accept request
+delete    /friends/:frinedId                 // reject request OR remove friend (same action: delete the row)
 get       /friends                     // list my accepted friends
-delete    /friends/:id                 // removeFriend
+delete    /friends/:frinedId                 // removeFriend
 get       /friends/mutual/:friendId    // mutual friends with someone
 
 
 ✅ sendRequest  everything starts here
+✅ getIncomingRequests 
 
-getIncomingRequests 
 acceptRequest
 rejectRequest (delete)
 getFriends - list accepted friends
@@ -30,5 +30,6 @@ getMutualFriends
 */
 router.route("/:friendId").post(friendController.sendRequest);
 router.route("/requests").get(friendController.getIncomingRequests);
+router.route("/:frinedId/accept").patch(friendController.acceptRequest);
 
 export default router;

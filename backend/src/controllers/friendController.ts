@@ -53,3 +53,23 @@ export const getIncomingRequests = catchAsync(
     });
   },
 );
+
+export const acceptRequest = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const friendId = req.params.friendId as string;
+
+    const result = await prisma.friendConnection.updateMany({
+      data: { status: "ACCEPTED" },
+      where: { addresseeId: userId, requesterId: friendId, status: "PENDING" },
+    });
+
+    if (result.count === 0)
+      return next(new AppError("No Pending request found", 404));
+
+    res.status(200).json({
+      status: "success",
+      message: "Friend request accepted",
+    });
+  },
+);
