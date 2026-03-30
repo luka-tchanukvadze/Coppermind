@@ -29,5 +29,6 @@ removeFriend (delete)
 getMutualFriends 
 */
 router.route("/:friendId").post(friendController.sendRequest);
+router.route("/requests").get(friendController.getIncomingRequests);
 
 export default router;
