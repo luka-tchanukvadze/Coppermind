@@ -27,6 +27,8 @@ get       /friends/mutual/:friendId          // mutual friends with someone
 getFriends - list accepted friends
 getMutualFriends 
 */
+router.route("/").get(friendController.getFriends);
+
 router
   .route("/:friendId")
   .post(friendController.sendRequest)

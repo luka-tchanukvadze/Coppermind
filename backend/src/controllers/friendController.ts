@@ -94,3 +94,26 @@ export const removeConnection = catchAsync(
     res.status(204).json({});
   },
 );
+
+export const getFriends = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+
+    const result = await prisma.friendConnection.findMany({
+      where: {
+        status: "ACCEPTED",
+        OR: [{ requesterId: userId }, { addresseeId: userId }],
+      },
+      include: {
+        requester: { select: { id: true, name: true, photo: true } },
+        addressee: { select: { id: true, name: true, photo: true } },
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: result.length,
+      data: { result },
+    });
+  },
+);
