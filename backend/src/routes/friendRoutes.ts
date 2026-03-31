@@ -7,34 +7,17 @@ const router = express.Router();
 
 router.use(authController.protect);
 
-/*
-TODO:
-✅ post      /freinds/:friendId              // send request
-✅ get       /friends/requests               // list my pending incoming requests
-✅ patch     /friends/:frinedId/accept       // accept request
-✅ delete    /friends/:frinedId              // reject request OR remove friend (same action: delete the row)
-✅ get       /friends                        // list my accepted friends
-
-get       /friends/mutual/:friendId          // mutual friends with someone
-
-/////////////
-
-✅ sendRequest  everything starts here
-✅ getIncomingRequests 
-✅ acceptRequest
-✅ rejectRequest / remove friend (delete)
-✅ getFriends - list accepted friends
-
-getMutualFriends 
-*/
+// ─── Static routes first (before :friendId catches them) ───
 router.route("/").get(friendController.getFriends);
+router.route("/requests").get(friendController.getIncomingRequests);
+router.route("/mutual/:friendId").get(friendController.getMutualFriends);
 
+// ─── :friendId routes - send, remove, accept ───
 router
   .route("/:friendId")
   .post(friendController.sendRequest)
   .delete(friendController.removeConnection);
 
-router.route("/requests").get(friendController.getIncomingRequests);
-router.route("/:frinedId/accept").patch(friendController.acceptRequest);
+router.route("/:friendId/accept").patch(friendController.acceptRequest);
 
 export default router;

@@ -117,3 +117,50 @@ export const getFriends = catchAsync(
     });
   },
 );
+
+export const getMutualFriends = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const friendId = req.params.friendId as string;
+
+    // Fetch both friend lists in parallel
+    const [myConnections, theirConnections] = await Promise.all([
+      prisma.friendConnection.findMany({
+        where: {
+          status: "ACCEPTED",
+          OR: [{ requesterId: userId }, { addresseeId: userId }],
+        },
+      }),
+      prisma.friendConnection.findMany({
+        where: {
+          status: "ACCEPTED",
+          OR: [{ requesterId: friendId }, { addresseeId: friendId }],
+        },
+      }),
+    ]);
+
+    // Extract the OTHER person's ID from each connection
+    const myFriendIds = myConnections.map((c) =>
+      c.requesterId === userId ? c.addresseeId : c.requesterId,
+    );
+    const theirFriendIds = theirConnections.map((c) =>
+      c.requesterId === friendId ? c.addresseeId : c.requesterId,
+    );
+
+    // Intersection - IDs in both sets
+    const myFriendSet = new Set(myFriendIds);
+    const mutualIds = theirFriendIds.filter((id) => myFriendSet.has(id));
+
+    // Fetch user info for the mutual friends
+    const mutualFriends = await prisma.user.findMany({
+      where: { id: { in: mutualIds } },
+      select: { id: true, name: true, photo: true },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: mutualFriends.length,
+      data: { mutualFriends },
+    });
+  },
+);
