@@ -13,8 +13,8 @@ TODO:
 ✅ get       /friends/requests               // list my pending incoming requests
 ✅ patch     /friends/:frinedId/accept       // accept request
 ✅ delete    /friends/:frinedId              // reject request OR remove friend (same action: delete the row)
+✅ get       /friends                        // list my accepted friends
 
-get       /friends                           // list my accepted friends
 get       /friends/mutual/:friendId          // mutual friends with someone
 
 /////////////
@@ -23,8 +23,8 @@ get       /friends/mutual/:friendId          // mutual friends with someone
 ✅ getIncomingRequests 
 ✅ acceptRequest
 ✅ rejectRequest / remove friend (delete)
+✅ getFriends - list accepted friends
 
-getFriends - list accepted friends
 getMutualFriends 
 */
 router.route("/").get(friendController.getFriends);
