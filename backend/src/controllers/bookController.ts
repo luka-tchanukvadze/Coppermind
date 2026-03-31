@@ -51,7 +51,7 @@ export const getAllBooks = catchAsync(
     // No cache hit - query the database
     const data = await prisma.book.findMany();
 
-    // Cache the result for 24 hours
+    // Cache the result for a week
     // 604800 - a week
     await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(data), {
       EX: 604800,

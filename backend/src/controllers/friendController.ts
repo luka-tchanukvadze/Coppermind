@@ -25,7 +25,7 @@ export const sendRequest = catchAsync(
     if (existing)
       return next(new AppError("Friend request already exists", 400));
 
-    // 3. Don't pass status or IDs from body — use only trusted values
+    // 3. Don't pass status or IDs from body - use only trusted values
     const result = await prisma.friendConnection.create({
       data: { requesterId: userId, addresseeId: friendId },
     });
@@ -71,5 +71,26 @@ export const acceptRequest = catchAsync(
       status: "success",
       message: "Friend request accepted",
     });
+  },
+);
+
+export const removeConnection = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const friendId = req.params.friendId as string;
+
+    const result = await prisma.friendConnection.deleteMany({
+      where: {
+        OR: [
+          { addresseeId: userId, requesterId: friendId },
+          { requesterId: userId, addresseeId: friendId },
+        ],
+      },
+    });
+
+    if (result.count === 0)
+      return next(new AppError("No connection found", 404));
+
+    res.status(204).json({});
   },
 );

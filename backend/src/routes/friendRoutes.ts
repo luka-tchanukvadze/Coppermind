@@ -27,7 +27,11 @@ rejectRequest / remove friend (delete)
 getFriends - list accepted friends
 getMutualFriends 
 */
-router.route("/:friendId").post(friendController.sendRequest);
+router
+  .route("/:friendId")
+  .post(friendController.sendRequest)
+  .delete(friendController.removeConnection);
+
 router.route("/requests").get(friendController.getIncomingRequests);
 router.route("/:frinedId/accept").patch(friendController.acceptRequest);
 
