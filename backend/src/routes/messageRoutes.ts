@@ -15,4 +15,6 @@ TODO:
 - Delete my message - DELETE /:conversationId/:messageId
 */
 
+router.route("/:friendId").post(messageController.sendMessage);
+
 export default router;
