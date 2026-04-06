@@ -114,9 +114,25 @@ export const getConversation = catchAsync(
       },
     });
 
-    if (!conversation)
-      return next(new AppError("Conversation not found", 404));
+    if (!conversation) return next(new AppError("Conversation not found", 404));
 
     res.status(200).json({ status: "success", data: { conversation } });
+  },
+);
+
+export const unsendMessage = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const conversationId = req.params.conversationId as string;
+    const messageId = req.params.messageId as string;
+
+    // Delete only if message belongs to logged-in user in this conversation
+    const unsend = await prisma.message.deleteMany({
+      where: { id: messageId, userId, conversationId },
+    });
+
+    if (unsend.count === 0) return next(new AppError("Message not found", 404));
+
+    res.status(204).json({});
   },
 );

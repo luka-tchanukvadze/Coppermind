@@ -7,16 +7,11 @@ const router = express.Router();
 
 router.use(authController.protect);
 
-/*
-TODO:
--✅ Send message to a friend - POST /:friendId (if no conversation exists, create one automatically)
--✅ Get all my conversations - GET /
--✅ Get single conversation with messages - GET /:conversationId
-- Delete my message - DELETE /:conversationId/:messageId
-*/
-
 router.route("/").get(messageController.getConversations);
 router.route("/:friendId").post(messageController.sendMessage);
 router.route("/:conversationId").get(messageController.getConversation);
+router
+  .route("/:conversationId/:messageId")
+  .delete(messageController.unsendMessage);
 
 export default router;

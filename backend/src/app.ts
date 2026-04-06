@@ -33,8 +33,8 @@ app.use("/api/v1/messages", messageRouter);
 // TODO: Add remaining routes:
 // ✅ - /api/v1/friends       (FriendConnection: send/accept/reject/remove, list friends)
 
+// 👌 needs socket.io -  /api/v1/conversations  (Conversation + Message: real-time messaging)
 // - /api/v1/discussions    (Discussion + Comment + Like: community forum)
-// - /api/v1/conversations  (Conversation + Message: real-time messaging)
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
