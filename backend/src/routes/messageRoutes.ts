@@ -17,5 +17,6 @@ TODO:
 
 router.route("/").get(messageController.getConversations);
 router.route("/:friendId").post(messageController.sendMessage);
+router.route("/:conversationId").get(messageController.getConversation);
 
 export default router;

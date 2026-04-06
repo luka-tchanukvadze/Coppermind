@@ -63,18 +63,22 @@ export const getConversations = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
 
+    // Find conversations where logged-in user is a participant
     const conversation = await prisma.conversation.findMany({
       where: { participants: { some: { userId } } },
       include: {
+        // Get only the other person's info - exclude yourself from participants
         participants: {
           where: { userId: { not: userId } },
           include: { user: { select: { id: true, name: true, photo: true } } },
         },
+        // Get the last message only - used for chat preview in sidebar
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
       },
+      // Show newest conversations first
       orderBy: { createdAt: "desc" },
     });
 
@@ -85,5 +89,11 @@ export const getConversations = catchAsync(
         conversation,
       },
     });
+  },
+);
+
+export const getConversation = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
   },
 );
