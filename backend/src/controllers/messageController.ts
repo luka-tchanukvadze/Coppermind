@@ -58,3 +58,32 @@ export const sendMessage = catchAsync(
     res.status(201).json({ status: "success", data: { message } });
   },
 );
+
+export const getConversations = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+
+    const conversation = await prisma.conversation.findMany({
+      where: { participants: { some: { userId } } },
+      include: {
+        participants: {
+          where: { userId: { not: userId } },
+          include: { user: { select: { id: true, name: true, photo: true } } },
+        },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: conversation.length,
+      data: {
+        conversation,
+      },
+    });
+  },
+);

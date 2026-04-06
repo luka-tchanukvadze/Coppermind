@@ -9,12 +9,13 @@ router.use(authController.protect);
 
 /*
 TODO:
-- Send message to a friend - POST /:friendId (if no conversation exists, create one automatically)
-- Get all my conversations - GET /
+-✅ Send message to a friend - POST /:friendId (if no conversation exists, create one automatically)
+-✅ Get all my conversations - GET /
 - Get single conversation with messages - GET /:conversationId
 - Delete my message - DELETE /:conversationId/:messageId
 */
 
+router.route("/").get(messageController.getConversations);
 router.route("/:friendId").post(messageController.sendMessage);
 
 export default router;
