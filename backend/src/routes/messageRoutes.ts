@@ -11,7 +11,7 @@ router.use(authController.protect);
 TODO:
 -✅ Send message to a friend - POST /:friendId (if no conversation exists, create one automatically)
 -✅ Get all my conversations - GET /
-- Get single conversation with messages - GET /:conversationId
+-✅ Get single conversation with messages - GET /:conversationId
 - Delete my message - DELETE /:conversationId/:messageId
 */
 

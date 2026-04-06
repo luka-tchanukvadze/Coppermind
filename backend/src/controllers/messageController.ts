@@ -95,5 +95,28 @@ export const getConversations = catchAsync(
 export const getConversation = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
+    const conversationId = req.params.conversationId as string;
+
+    // Find this conversation only if logged-in user is a participant
+    const conversation = await prisma.conversation.findFirst({
+      where: { id: conversationId, participants: { some: { userId } } },
+      include: {
+        // Get the other person's profile
+        participants: {
+          where: { userId: { not: userId } },
+          include: { user: { select: { id: true, name: true, photo: true } } },
+        },
+        // Get all messages sorted oldest first so chat reads top to bottom
+        messages: {
+          orderBy: { createdAt: "asc" },
+          include: { user: { select: { id: true, name: true, photo: true } } },
+        },
+      },
+    });
+
+    if (!conversation)
+      return next(new AppError("Conversation not found", 404));
+
+    res.status(200).json({ status: "success", data: { conversation } });
   },
 );
