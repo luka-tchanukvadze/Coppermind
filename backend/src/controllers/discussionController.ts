@@ -40,3 +40,28 @@ export const getDiscussions = catchAsync(
     });
   },
 );
+
+export const getDiscussion = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+
+    const discussion = await prisma.discussion.findUnique({
+      where: { id },
+      include: {
+        creator: { select: { id: true, name: true, photo: true } },
+        comments: {
+          include: { user: { select: { id: true, name: true, photo: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+        _count: { select: { likes: true } },
+      },
+    });
+
+    if (!discussion) return next(new AppError("Discussion not found", 404));
+
+    res.status(200).json({
+      status: "success",
+      data: { discussion },
+    });
+  },
+);
