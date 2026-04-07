@@ -84,3 +84,19 @@ export const updateDiscussion = catchAsync(
     res.status(204).json({});
   },
 );
+
+export const deleteDiscussion = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const id = req.params.id as string;
+
+    const discussion = await prisma.discussion.deleteMany({
+      where: { id, creatorId: userId },
+    });
+
+    if (discussion.count === 0)
+      return next(new AppError("Discussion not found", 404));
+
+    res.status(204).json({});
+  },
+);

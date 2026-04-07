@@ -29,6 +29,7 @@ router
 router
   .route("/:id")
   .get(discussionController.getDiscussion)
-  .patch(discussionController.updateDiscussion);
+  .patch(discussionController.updateDiscussion)
+  .delete(discussionController.deleteDiscussion);
 
 export default router;
