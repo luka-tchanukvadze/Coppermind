@@ -20,3 +20,23 @@ export const createDiscussion = catchAsync(
     });
   },
 );
+
+export const getDiscussions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const discussions = await prisma.discussion.findMany({
+      include: {
+        creator: { select: { id: true, name: true, photo: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: discussions.length,
+      data: {
+        discussions,
+      },
+    });
+  },
+);
