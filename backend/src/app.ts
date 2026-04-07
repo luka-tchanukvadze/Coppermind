@@ -5,6 +5,7 @@ import bookRouter from "./routes/bookRoutes.js";
 import userBookRouter from "./routes/userBookRoutes.js";
 import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
+import discussionRouter from "./routes/discussionRoutes.js";
 
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
@@ -29,6 +30,7 @@ app.use("/api/v1/books", bookRouter);
 app.use("/api/v1/user-books", userBookRouter);
 app.use("/api/v1/friends", friendRouter);
 app.use("/api/v1/messages", messageRouter);
+app.use("/api/v1/discussions", discussionRouter);
 
 // TODO: Add remaining routes:
 // ✅ - /api/v1/friends       (FriendConnection: send/accept/reject/remove, list friends)
