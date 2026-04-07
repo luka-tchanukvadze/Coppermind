@@ -65,3 +65,22 @@ export const getDiscussion = catchAsync(
     });
   },
 );
+
+export const updateDiscussion = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const id = req.params.id as string;
+
+    const { title, description } = req.body;
+
+    const discussion = await prisma.discussion.updateMany({
+      where: { id, creatorId: userId },
+      data: { title, description },
+    });
+
+    if (discussion.count === 0)
+      return next(new AppError("Discussion not found", 404));
+
+    res.status(204).json({});
+  },
+);

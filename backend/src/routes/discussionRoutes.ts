@@ -13,7 +13,7 @@ TODO:
 ✅ GET / — get all discussions (for a feed/browse page)
 
 ✅ GET /:id — get single discussion with its comments and like count
-PATCH /:id — update your discussion (ownership check)
+✅ PATCH /:id — update your discussion (ownership check)
 DELETE /:id — delete your discussion (ownership check)
 
 POST /:id/comments — add a comment to a discussion
@@ -26,6 +26,9 @@ router
   .post(discussionController.createDiscussion)
   .get(discussionController.getDiscussions);
 
-router.route("/:id").get(discussionController.getDiscussion);
+router
+  .route("/:id")
+  .get(discussionController.getDiscussion)
+  .patch(discussionController.updateDiscussion);
 
 export default router;
