@@ -137,3 +137,23 @@ export const deleteComment = catchAsync(
     res.status(204).json({});
   },
 );
+
+export const toggleLike = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const id = req.params.id as string;
+
+    // Check if user already liked this discussion
+    const existingLike = await prisma.like.findUnique({
+      where: { userId_discussionId: { userId, discussionId: id } },
+    });
+
+    if (existingLike) {
+      await prisma.like.delete({ where: { id: existingLike.id } });
+      return res.status(200).json({ status: "success", liked: false });
+    }
+
+    await prisma.like.create({ data: { userId, discussionId: id } });
+    res.status(200).json({ status: "success", liked: true });
+  },
+);

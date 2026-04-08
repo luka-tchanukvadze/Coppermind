@@ -7,20 +7,6 @@ const router = express.Router();
 
 router.use(authController.protect);
 
-/*
-TODO:
-✅ POST / - create a discussion (title, description)
-✅ GET / - get all discussions (for a feed/browse page)
-
-✅ GET /:id - get single discussion with its comments and like count
-✅ PATCH /:id - update your discussion (ownership check)
-✅ DELETE /:id - delete your discussion (ownership check)
-
-✅ POST /:id/comments - add a comment to a discussion
-DELETE /:id/comments/:commentId - delete your comment
-POST /:id/like - like a discussion (toggle - like if not liked, unlike if already liked)
-*/
-
 router
   .route("/")
   .post(discussionController.createDiscussion)
@@ -32,9 +18,14 @@ router
   .patch(discussionController.updateDiscussion)
   .delete(discussionController.deleteDiscussion);
 
+// ---- Comments & Likes ----
+
 router.route("/:id/comments").post(discussionController.addComment);
+
 router
   .route("/:id/comments/:commentId")
   .delete(discussionController.deleteComment);
+
+router.route("/:id/like").post(discussionController.toggleLike);
 
 export default router;
