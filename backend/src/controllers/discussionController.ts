@@ -100,3 +100,23 @@ export const deleteDiscussion = catchAsync(
     res.status(204).json({});
   },
 );
+
+// ---- Comments & Likes ----
+
+export const addComment = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const id = req.params.id as string;
+
+    const { content } = req.body;
+
+    const comment = await prisma.comment.create({
+      data: { content, userId, discussionId: id },
+    });
+
+    res.status(201).json({
+      status: "success",
+      data: { comment },
+    });
+  },
+);

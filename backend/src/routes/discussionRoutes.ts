@@ -9,16 +9,16 @@ router.use(authController.protect);
 
 /*
 TODO:
-✅ POST / — create a discussion (title, description)
-✅ GET / — get all discussions (for a feed/browse page)
+✅ POST / - create a discussion (title, description)
+✅ GET / - get all discussions (for a feed/browse page)
 
-✅ GET /:id — get single discussion with its comments and like count
-✅ PATCH /:id — update your discussion (ownership check)
-DELETE /:id — delete your discussion (ownership check)
+✅ GET /:id - get single discussion with its comments and like count
+✅ PATCH /:id - update your discussion (ownership check)
+✅ DELETE /:id - delete your discussion (ownership check)
 
-POST /:id/comments — add a comment to a discussion
-DELETE /:id/comments/:commentId — delete your comment
-POST /:id/like — like a discussion (toggle — like if not liked, unlike if already liked)
+✅ POST /:id/comments - add a comment to a discussion
+DELETE /:id/comments/:commentId - delete your comment
+POST /:id/like - like a discussion (toggle - like if not liked, unlike if already liked)
 */
 
 router
@@ -31,5 +31,7 @@ router
   .get(discussionController.getDiscussion)
   .patch(discussionController.updateDiscussion)
   .delete(discussionController.deleteDiscussion);
+
+router.route("/:id/comments").post(discussionController.addComment);
 
 export default router;
