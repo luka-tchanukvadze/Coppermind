@@ -33,5 +33,8 @@ router
   .delete(discussionController.deleteDiscussion);
 
 router.route("/:id/comments").post(discussionController.addComment);
+router
+  .route("/:id/comments/:commentId")
+  .delete(discussionController.deleteComment);
 
 export default router;

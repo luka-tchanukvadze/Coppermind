@@ -120,3 +120,20 @@ export const addComment = catchAsync(
     });
   },
 );
+
+export const deleteComment = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const id = req.params.id as string;
+    const commentId = req.params.commentId as string;
+
+    const comment = await prisma.comment.deleteMany({
+      where: { discussionId: id, userId, id: commentId },
+    });
+
+    if (comment.count === 0)
+      return next(new AppError("Comment not found", 404));
+
+    res.status(204).json({});
+  },
+);
