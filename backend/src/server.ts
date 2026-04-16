@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import type { Server } from "http";
+import http from "http";
 
 process.on("uncaughtException", (err) => {
   console.log("UNCAUGHT EXCEPTION! Shutting down...");
@@ -16,10 +16,14 @@ dotenv.config();
 import app from "./app.js";
 import prisma from "./prisma.js";
 import redisClient from "./redisClient.js";
+import { initSocket } from "./socket/socket.js";
 
 const PORT = Number(process.env.PORT) || 5001;
 
-const server: Server = app.listen(PORT, async () => {
+const server = http.createServer(app);
+initSocket(server);
+
+server.listen(PORT, async () => {
   try {
     await prisma.$connect();
     console.log("Database connected successfully");

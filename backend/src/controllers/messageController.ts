@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync.js";
 import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
+import { io, getReceiverSocketId } from "../socket/socket.js";
 
 export const sendMessage = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
