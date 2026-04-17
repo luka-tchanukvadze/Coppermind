@@ -32,11 +32,18 @@ app.use("/api/v1/friends", friendRouter);
 app.use("/api/v1/messages", messageRouter);
 app.use("/api/v1/discussions", discussionRouter);
 
-// TODO: Add remaining routes:
-// ✅ - /api/v1/friends       (FriendConnection: send/accept/reject/remove, list friends)
-// ✅ - /api/v1/discussions    (Discussion + Comment + Like: community forum)
+/*
+TODO:
+✅ /api/v1/friends - FriendConnection: send/accept/reject/remove, list friends
+✅ /api/v1/discussions - Discussion + Comment + Like: community forum
+✅ /api/v1/messages - Conversation + Message (socket.io set up, emit left to add)
 
-// 👌 needs socket.io -  /api/v1/conversations  (Conversation + Message: real-time messaging)
+Later:
+- Zod input validation on req.body
+- Security: Helmet, express-rate-limit, restrict CORS origins
+- Tests (Jest + Supertest)
+- Dockerize + deploy
+*/
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
