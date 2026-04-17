@@ -56,6 +56,12 @@ export const sendMessage = catchAsync(
       data: { text, userId, conversationId: conversation.id },
     });
 
+    // Emit the new message to the receiver in real time if they're online
+    const receiverSocketId = getReceiverSocketId(friendId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", message);
+    }
+
     res.status(201).json({ status: "success", data: { message } });
   },
 );
