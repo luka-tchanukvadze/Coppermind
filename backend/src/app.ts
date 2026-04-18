@@ -53,7 +53,8 @@ Later:
 - Dockerize + deploy
 */
 
-app.all("*", (req: Request, res: Response, next: NextFunction) => {
+// 404 - runs when no route above matched the request
+app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
