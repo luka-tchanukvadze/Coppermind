@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
 
 import userRouter from "./routes/userRoutes.js";
 import bookRouter from "./routes/bookRoutes.js";
@@ -20,6 +21,13 @@ const app = express();
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 app.use(cookieParser());
