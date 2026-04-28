@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.ts",
   "scripts": {
-    "dev": "nodemon --watch backend/src --exec node --loader ts-node/esm backend/src/server.ts"
+    "dev": "nodemon --watch backend/src --exec node --loader ts-node/esm backend/src/server.ts",
+    "start": "tsx backend/src/server.ts"
   },
   "type": "module",
   "keywords": [],
@@ -35,6 +36,7 @@
     "pg": "^8.18.0",
     "prisma": "^7.4.1",
     "redis": "^5.11.0",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "tsx": "^4.21.0"
   }
 }

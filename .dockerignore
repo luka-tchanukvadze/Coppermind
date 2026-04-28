@@ -1,9 +1,14 @@
 node_modules
+backend/node_modules
+backend/generated
 frontend
 .git
 .github
 .idea
 .env
 .env.*
+**/.env
+**/.env.*
+*.log
 *.md
 .DS_Store
