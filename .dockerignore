@@ -1,0 +1,9 @@
+node_modules
+frontend
+.git
+.github
+.idea
+.env
+.env.*
+*.md
+.DS_Store
