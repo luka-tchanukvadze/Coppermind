@@ -2,6 +2,9 @@ FROM node:20-bookworm-slim
 
 ENV NODE_ENV=production
 
+# Prisma needs OpenSSL at runtime. bookworm-slim doesn't include it by default
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Install deps
