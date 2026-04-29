@@ -20,4 +20,4 @@ RUN npx prisma generate --schema=./backend/prisma/schema.prisma
 
 EXPOSE 5001
 
-CMD ["npx", "tsx", "backend/src/server.ts"]
+CMD ["sh", "-c", "cd backend && npx prisma migrate deploy --schema=./prisma/schema.prisma && exec npx tsx src/server.ts"]
