@@ -22,7 +22,7 @@ export default function SignupPage() {
   });
   const signup = useSignup();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     signup.mutate(formData, {
       onSuccess: () => router.push("/feed"),
@@ -46,7 +46,9 @@ export default function SignupPage() {
             id="name"
             placeholder="How should we call you?"
             autoComplete="name"
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
           />
         </div>
         <div className="space-y-1.5">
@@ -57,7 +59,7 @@ export default function SignupPage() {
             placeholder="you@reader.com"
             autoComplete="email"
             onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
+              setFormData((prev) => ({ ...prev, email: e.target.value }))
             }
           />
         </div>
@@ -68,7 +70,7 @@ export default function SignupPage() {
             type="password"
             autoComplete="new-password"
             onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
+              setFormData((prev) => ({ ...prev, password: e.target.value }))
             }
           />
         </div>
@@ -79,7 +81,10 @@ export default function SignupPage() {
             type="password"
             autoComplete="new-password"
             onChange={(e) =>
-              setFormData({ ...formData, password_confirm: e.target.value })
+              setFormData((prev) => ({
+                ...prev,
+                password_confirm: e.target.value,
+              }))
             }
           />
         </div>
@@ -89,7 +94,7 @@ export default function SignupPage() {
             label="Choose your order"
             size="sm"
             onChange={(fileName) =>
-              setFormData({ ...formData, photo: fileName })
+              setFormData((prev) => ({ ...prev, photo: fileName }))
             }
           />
           <p className="mt-2 text-xs text-muted">You can change this later.</p>

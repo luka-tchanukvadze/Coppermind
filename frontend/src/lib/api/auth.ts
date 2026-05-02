@@ -14,8 +14,8 @@ async function signupRequest(input: SignupInput) {
   return apiClient.post("/users/signup", input);
 }
 
-const useSignup = () => {
+function useSignup() {
   return useMutation({ mutationFn: signupRequest });
-};
+}
 
 export { useSignup };
