@@ -1,30 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AvatarPicker } from "@/components/shared/avatar-picker";
-import React, { useState } from "react";
 import { useSignup } from "@/lib/api/auth";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { SignupSchema, type SignupInput } from "@/lib/schemas/auth";
 
 export default function SignupPage() {
   const router = useRouter();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    photo: "",
-    password: "",
-    password_confirm: "",
-  });
   const signup = useSignup();
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    signup.mutate(formData, {
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<SignupInput>({ resolver: zodResolver(SignupSchema) });
+
+  const onValid = (data: SignupInput) => {
+    signup.mutate(data, {
       onSuccess: () => router.push("/feed"),
       onError: (err) => toast.error(err.message),
     });
@@ -39,18 +40,20 @@ export default function SignupPage() {
         <p className="mt-1 text-sm text-muted">Takes about a minute.</p>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
         <div className="space-y-1.5">
           <Label htmlFor="name">Name</Label>
           <Input
             id="name"
             placeholder="How should we call you?"
             autoComplete="name"
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
+            {...register("name")}
           />
+          {errors.name && (
+            <p className="text-xs text-error">{errors.name.message}</p>
+          )}
         </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -58,35 +61,39 @@ export default function SignupPage() {
             type="email"
             placeholder="you@reader.com"
             autoComplete="email"
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, email: e.target.value }))
-            }
+            {...register("email")}
           />
+          {errors.email && (
+            <p className="text-xs text-error">{errors.email.message}</p>
+          )}
         </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
             type="password"
             autoComplete="new-password"
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, password: e.target.value }))
-            }
+            {...register("password")}
           />
+          {errors.password && (
+            <p className="text-xs text-error">{errors.password.message}</p>
+          )}
         </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="password_confirm">Confirm password</Label>
           <Input
             id="password_confirm"
             type="password"
             autoComplete="new-password"
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                password_confirm: e.target.value,
-              }))
-            }
+            {...register("password_confirm")}
           />
+          {errors.password_confirm && (
+            <p className="text-xs text-error">
+              {errors.password_confirm.message}
+            </p>
+          )}
         </div>
 
         <div className="pt-1">
@@ -94,7 +101,7 @@ export default function SignupPage() {
             label="Choose your order"
             size="sm"
             onChange={(fileName) =>
-              setFormData((prev) => ({ ...prev, photo: fileName }))
+              setValue("photo", fileName, { shouldValidate: true })
             }
           />
           <p className="mt-2 text-xs text-muted">You can change this later.</p>
