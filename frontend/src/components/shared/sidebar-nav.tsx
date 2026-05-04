@@ -15,7 +15,7 @@ import {
 import { Wordmark } from "./wordmark";
 import { UserPic } from "./user-pic";
 import { cn } from "@/lib/utils";
-import { currentUser } from "@/lib/mocks/dummy";
+import { useMe } from "@/lib/api/users";
 
 interface NavItem {
   href: string;
@@ -28,18 +28,43 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/feed", label: "Home", icon: Home, match: (p) => p === "/feed" },
-  { href: "/books", label: "Books", icon: BookOpenText, match: (p) => p.startsWith("/books") },
-  { href: "/shelf", label: "My Shelf", icon: Library, match: (p) => p.startsWith("/shelf") },
-  { href: "/friends", label: "Friends", icon: Users, match: (p) => p.startsWith("/friends") },
-  { href: "/chat", label: "Chat", icon: MessageSquare, match: (p) => p.startsWith("/chat") },
-  { href: "/discussions", label: "Discussions", icon: Sparkles, match: (p) => p.startsWith("/discussions") },
+  {
+    href: "/books",
+    label: "Books",
+    icon: BookOpenText,
+    match: (p) => p.startsWith("/books"),
+  },
+  {
+    href: "/shelf",
+    label: "My Shelf",
+    icon: Library,
+    match: (p) => p.startsWith("/shelf"),
+  },
+  {
+    href: "/friends",
+    label: "Friends",
+    icon: Users,
+    match: (p) => p.startsWith("/friends"),
+  },
+  {
+    href: "/chat",
+    label: "Chat",
+    icon: MessageSquare,
+    match: (p) => p.startsWith("/chat"),
+  },
+  {
+    href: "/discussions",
+    label: "Discussions",
+    icon: Sparkles,
+    match: (p) => p.startsWith("/discussions"),
+  },
 ];
 
 // onNavigate fires after a Link click - used by MobileNav to close its drawer.
 // Desktop sidebar doesn't need it.
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const me = currentUser();
+  const { data: user, isLoading, error } = useMe();
 
   return (
     <div className="flex h-full w-65 shrink-0 flex-col border-r bg-surface/60">
@@ -50,7 +75,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 px-3">
         <ul className="space-y-0.5">
           {NAV.map((item) => {
-            const active = item.match ? item.match(pathname) : pathname === item.href;
+            const active = item.match
+              ? item.match(pathname)
+              : pathname === item.href;
             const Icon = item.icon;
             return (
               <li key={item.href}>
@@ -75,10 +102,20 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="m-3 flex items-center gap-3 rounded-md border bg-surface p-3">
-        <Link href="/profile" onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3">
-          <UserPic photo={me.photo} name={me.name} size="sm" />
+        <Link
+          href="/profile"
+          onClick={onNavigate}
+          className="flex min-w-0 flex-1 items-center gap-3"
+        >
+          <UserPic
+            photo={user?.photo ?? "default.jpg"}
+            name={user?.name ?? "Guest"}
+            size="sm"
+          />
           <div className="min-w-0">
-            <div className="truncate text-sm font-medium text-ink">{me.name}</div>
+            <div className="truncate text-sm font-medium text-ink">
+              {isLoading ? "..." : (user?.name ?? "Guest")}
+            </div>
             <div className="truncate text-xs text-muted">View profile</div>
           </div>
         </Link>
