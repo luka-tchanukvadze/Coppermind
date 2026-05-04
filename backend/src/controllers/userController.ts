@@ -95,10 +95,7 @@ export const deleteMe = catchAsync(
       data: { active: false },
     });
 
-    res.status(204).json({
-      status: "success",
-      data: null,
-    });
+    res.status(204).end();
   },
 );
 
