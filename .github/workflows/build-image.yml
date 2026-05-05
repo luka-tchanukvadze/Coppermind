@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "backend/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-image.yml"
 
 jobs:
   build-and-push:
