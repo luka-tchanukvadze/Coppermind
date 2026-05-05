@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { User as UserIcon, Shield, AlertTriangle, Mail, type LucideIcon } from "lucide-react";
+import {
+  User as UserIcon,
+  Shield,
+  AlertTriangle,
+  Mail,
+  LogOut,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { currentUser } from "@/lib/mocks/dummy";
 import { AccountSection } from "./account-section";
@@ -54,12 +61,27 @@ export function SettingsShell() {
               </li>
             );
           })}
+
+          <li>
+            <button
+              type="button"
+              onClick={() => console.log()}
+              className={cn(
+                "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm transition-colors md:w-full hover:bg-muted-bg hover:text-ink text-error/80",
+              )}
+            >
+              <LogOut className="h-4 w-4" strokeWidth={1.5} />
+              Log out
+            </button>
+          </li>
         </ul>
       </nav>
 
       <div className="min-w-0">
         {section === "account" && <AccountSection email={me.email} />}
-        {section === "profile" && <ProfileSection name={me.name} photo={me.photo} />}
+        {section === "profile" && (
+          <ProfileSection name={me.name} photo={me.photo} />
+        )}
         {section === "privacy" && <PrivacySection />}
         {section === "danger" && <DangerSection />}
       </div>
