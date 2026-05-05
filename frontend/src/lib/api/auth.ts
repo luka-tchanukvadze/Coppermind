@@ -1,7 +1,7 @@
 // login, signup, logout, forgotPassword, resetPassword
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { SignupInput } from "../schemas/auth";
+import type { LoginInput, SignupInput } from "../schemas/auth";
 
 // sign up
 async function signupRequest(input: SignupInput) {
@@ -13,7 +13,16 @@ function useSignup() {
 }
 
 // login
+async function loginRequest(input: LoginInput) {
+  return apiClient.post("/users/login", input);
+}
+
+function useLogin() {
+  return useMutation({
+    mutationFn: loginRequest,
+  });
+}
 
 // logout
 
-export { useSignup };
+export { useSignup, useLogin };
