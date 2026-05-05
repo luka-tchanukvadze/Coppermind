@@ -24,5 +24,14 @@ function useLogin() {
 }
 
 // logout
+async function logoutRequest() {
+  return apiClient.post("/users/logout");
+}
 
-export { useSignup, useLogin };
+function useLogout() {
+  return useMutation({
+    mutationFn: logoutRequest,
+  });
+}
+
+export { useSignup, useLogin, useLogout };

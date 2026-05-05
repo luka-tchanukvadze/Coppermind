@@ -10,11 +10,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { currentUser } from "@/lib/mocks/dummy";
 import { AccountSection } from "./account-section";
 import { ProfileSection } from "./profile-section";
 import { PrivacySection } from "./privacy-section";
 import { DangerSection } from "./danger-section";
+import { useMe } from "@/lib/api/users";
+import { useRouter } from "next/navigation";
+import { useLogout } from "@/lib/api/auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type SectionId = "account" | "profile" | "privacy" | "danger";
 
@@ -32,8 +36,22 @@ const SECTIONS: NavItem[] = [
 ];
 
 export function SettingsShell() {
-  const me = currentUser();
+  const { data: user, isLoading, error } = useMe();
+  const logout = useLogout();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [section, setSection] = useState<SectionId>("account");
+
+  const handleLogout = () => {
+    logout.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.clear();
+        router.push("/");
+      },
+      onError: (err) => toast.error(err.message),
+    });
+  };
 
   return (
     <div className="grid gap-6 md:grid-cols-[200px_minmax(0,1fr)] md:gap-10">
@@ -65,22 +83,26 @@ export function SettingsShell() {
           <li>
             <button
               type="button"
-              onClick={() => console.log()}
+              onClick={handleLogout}
               className={cn(
                 "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm transition-colors md:w-full hover:bg-muted-bg hover:text-ink text-error/80",
               )}
+              disabled={logout.isPending}
             >
               <LogOut className="h-4 w-4" strokeWidth={1.5} />
-              Log out
+              {logout.isPending ? "Log out..." : "Log out"}
             </button>
           </li>
         </ul>
       </nav>
 
       <div className="min-w-0">
-        {section === "account" && <AccountSection email={me.email} />}
+        {section === "account" && <AccountSection email={user?.email ?? ""} />}
         {section === "profile" && (
-          <ProfileSection name={me.name} photo={me.photo} />
+          <ProfileSection
+            name={user?.name ?? ""}
+            photo={user?.photo ?? "default.jpg"}
+          />
         )}
         {section === "privacy" && <PrivacySection />}
         {section === "danger" && <DangerSection />}
