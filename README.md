@@ -2,15 +2,15 @@
 
 > **Work in progress.** Backend is functional, frontend is mid-integration. Many features are stubbed against dummy data and will be wired to the real API as they go.
 
-A reading social app. Track what you're reading, keep notes beside the book, and talk about books with friends who actually read them. Goodreads, but quieter and built for people who actually read.
+Goodreads, without the noise. A full-stack reading app with shelves, public notes, friend connections, discussion threads, and live chat - self-hosted, real-time, fully owned.
 
 ## Stack
 
-**Backend** — Express 5, TypeScript, Prisma 7 (with `@prisma/adapter-pg`), PostgreSQL 16, Redis 7, Socket.IO, JWT auth in httpOnly cookies, bcryptjs, Nodemailer/SendGrid.
+**Backend** - Express 5, TypeScript, Prisma 7 (with `@prisma/adapter-pg`), PostgreSQL 16, Redis 7, Socket.IO, JWT auth in httpOnly cookies, bcryptjs, Nodemailer/SendGrid.
 
-**Frontend** — Next.js 15 (App Router), React 19, Tailwind v4, shadcn-style primitives (Radix + cva), TanStack Query, react-hook-form + Zod, Sonner toasts, lucide-react.
+**Frontend** - Next.js 15 (App Router), React 19, Tailwind v4, shadcn-style primitives (Radix + cva), TanStack Query, react-hook-form + Zod, Sonner toasts, lucide-react.
 
-**Infra** — Docker, GitHub Actions builds an ARM64 image and pushes to GHCR on every `master` push. A Raspberry Pi 4 runs the backend stack via docker-compose; Watchtower auto-pulls and restarts on new images. Migrations run automatically on container startup.
+**Infra** - Docker, GitHub Actions builds an ARM64 image and pushes to GHCR on every `master` push. A Raspberry Pi runs the backend stack via docker-compose; Watchtower auto-pulls and restarts on new images. Migrations run automatically on container startup.
 
 ## Repo layout
 
@@ -62,8 +62,6 @@ npx prisma migrate dev --schema=./backend/prisma/schema.prisma
 npm run dev
 ```
 
-Backend starts on port 5001.
-
 ### Frontend
 
 ```bash
@@ -72,32 +70,9 @@ npm install
 npm run dev
 ```
 
-Frontend starts on port 3000. Set `frontend/.env.local` with `BACKEND_URL` (the Pi's IP or `http://localhost:5001`). Next.js proxies `/api/*` to that URL so cookies stay same-origin.
-
 ## Deployment
 
-Pushing to `master` triggers the workflow:
-
-1. GitHub Actions builds the linux/arm64 image
-2. Pushes to `ghcr.io/luka-tchanukvadze/coppermind-backend:latest`
-3. Watchtower on the Pi polls every 5 min, pulls the new image, restarts the backend container
-4. Container start runs `prisma migrate deploy` then boots the server
-
-Frontend deployment isn't wired up yet — currently runs on the dev machine.
-
-## Status / what's done
-
-- ✅ Backend routes (users, books, user-books, friends, discussions, messages)
-- ✅ Auth (signup, login, logout, password reset)
-- ✅ Pi deployment loop (push → auto-deploy)
-- ✅ Frontend UI (every page exists with dummy data)
-- ✅ TanStack Query setup
-- ✅ Signup wired end-to-end with Zod validation
-- ✅ `useMe` query showing real user in the sidebar
-- 🚧 Login + logout (backend done, frontend in progress)
-- ⏳ Books, shelf, notes, discussions, friends, chat — wiring frontend to the real API
-- ⏳ Google Books integration (search → save to db)
-- ⏳ Cloudflare Tunnel for public access
+Push to `master`. GitHub Actions builds the image, pushes to GHCR, Watchtower on the Pi pulls and restarts. Migrations run on container startup.
 
 ## Why "Coppermind"
 
