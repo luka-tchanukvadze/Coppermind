@@ -4,13 +4,10 @@ import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
 import redisClient from "../redisClient.js";
 
+// one Redis key for the whole public list - simple to invalidate on writes. Fine until I need to scale
 const BOOKS_CACHE_KEY = "all_books";
 
-//////////////////////
-// Admin-only controller for managing the global book catalog (used for recommendations).
-// Not exposed to front-end users.
-//////////////////////
-
+// addBook: admin-only. Seeds new entries into the global catalog.
 export const addBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { title, author, genres, coverImage, externalApiId } = req.body;
@@ -24,46 +21,44 @@ export const addBook = catchAsync(
 
     res.status(201).json({
       status: "success",
-      data: {
-        book: data,
-      },
+      data: { book: data },
     });
   },
 );
 
 export const getAllBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    // Check Redis cache first
-    const cachedBooks = await redisClient.get(BOOKS_CACHE_KEY);
-    if (cachedBooks) {
-      const books = JSON.parse(cachedBooks);
+    // clamp inputs so a bad ?page=-5 or ?limit=99999 can't blow up the response
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
 
-      return res.status(200).json({
-        status: "success",
-        source: "cache",
-        results: books.length,
-        data: {
-          books,
-        },
+    let books;
+    let source: "cache" | "database";
+
+    /* TODO: i need to add a SETNX lock if cache stampede ever becomes a real problem
+       (many users simultaneously hitting this route the moment cache expires) */
+    const cached = await redisClient.get(BOOKS_CACHE_KEY);
+    if (cached) {
+      books = JSON.parse(cached);
+      source = "cache";
+    } else {
+      books = await prisma.book.findMany({ orderBy: { title: "asc" } });
+      // cache 1 week (604800s)
+      await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(books), {
+        EX: 604800,
       });
+      source = "database";
     }
-
-    // No cache hit - query the database
-    const data = await prisma.book.findMany();
-
-    // Cache the result for a week
-    // 604800 - a week
-    await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(data), {
-      EX: 604800,
-    });
 
     res.status(200).json({
       status: "success",
-      source: "database",
-      results: data.length,
-      data: {
-        books: data,
-      },
+      source,
+      total: books.length,
+      page,
+      totalPages: Math.ceil(books.length / limit),
+      results: Math.min(limit, Math.max(0, books.length - skip)),
+      data: { books: books.slice(skip, skip + limit) },
     });
   },
 );
