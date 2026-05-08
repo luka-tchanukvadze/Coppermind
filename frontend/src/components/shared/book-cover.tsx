@@ -1,8 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-// Book.coverImage in the schema is a string. Our dummy stores a hex color;
-// real data would be a URL. Either way the cover keeps a 2:3 aspect ratio.
+// Book.coverImage can be a hex (#xxxxxx) for mock covers or a URL/path for real
+// images. Bad input or a runtime load error falls back to a default-coloured mock.
 
 interface BookCoverProps {
   coverImage: string;
@@ -20,6 +23,12 @@ const SIZES = {
   xl: { width: "w-56", w: 224, text: "text-sm" },
 } as const;
 
+const FALLBACK_COLOR = "#7a8a99";
+
+const isHexColor = (s: string) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s);
+const isImageSrc = (s: string) =>
+  s.startsWith("/") || /^https?:\/\//.test(s);
+
 export function BookCover({
   coverImage,
   title,
@@ -28,12 +37,16 @@ export function BookCover({
   showTitle = true,
   size = "md",
 }: BookCoverProps) {
-  // Detect storage type by prefix: "#xxx" = hex color (dummy), anything else = URL.
-  // Lets us fake real covers in mocks without a build step.
-  const isColor = coverImage.startsWith("#");
+  const [imgError, setImgError] = useState(false);
+
+  const isColor = isHexColor(coverImage);
+  const isValidSrc = isImageSrc(coverImage);
+  // colour mode covers three cases: real hex, invalid src, or image failed to load
+  const useColorMode = isColor || !isValidSrc || imgError;
   const sz = SIZES[size];
 
-  if (isColor) {
+  if (useColorMode) {
+    const bgColor = isColor ? coverImage : FALLBACK_COLOR;
     return (
       <div
         className={cn(
@@ -42,7 +55,7 @@ export function BookCover({
           sz.text,
           className,
         )}
-        style={{ background: coverImage }}
+        style={{ background: bgColor }}
       >
         {/* Diagonal gradient fakes light hitting the cover. */}
         <div
@@ -73,7 +86,14 @@ export function BookCover({
 
   return (
     <div className={cn("relative aspect-2/3 shrink-0 overflow-hidden rounded-sm shadow-sm", sz.width, className)}>
-      <Image src={coverImage} alt={title} fill sizes="(max-width: 768px) 33vw, 200px" className="object-cover" />
+      <Image
+        src={coverImage}
+        alt={title}
+        fill
+        sizes="(max-width: 768px) 33vw, 200px"
+        className="object-cover"
+        onError={() => setImgError(true)}
+      />
     </div>
   );
 }
