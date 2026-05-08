@@ -11,6 +11,7 @@ type BooksResponse = {
   data: { books: Book[] };
 };
 
+// unwrapped shape
 type BooksResult = {
   total: number;
   page: number;
