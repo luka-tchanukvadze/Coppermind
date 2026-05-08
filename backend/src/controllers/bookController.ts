@@ -62,3 +62,22 @@ export const getAllBooks = catchAsync(
     });
   },
 );
+
+// getBook: single book lookup by id. Pattern mirrors getUserBook in userBookController.ts
+// minus the ownership check, since books are global, not user-scoped
+export const getBook = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+
+    const book = await prisma.book.findUnique({
+      where: { id },
+    });
+
+    if (!book) return next(new AppError("No book found with that ID", 404));
+
+    res.status(200).json({
+      status: "success",
+      data: { book },
+    });
+  },
+);
