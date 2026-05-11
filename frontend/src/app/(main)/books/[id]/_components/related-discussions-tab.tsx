@@ -2,6 +2,13 @@ import Link from "next/link";
 import type { DiscussionWithCounts } from "@/types/schema";
 
 export function RelatedDiscussionsTab({ discussions }: { discussions: DiscussionWithCounts[] }) {
+  if (!discussions.length)
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        No related discussions yet.
+      </div>
+    );
+
   return (
     <ul className="divide-y">
       {discussions.map((d) => (

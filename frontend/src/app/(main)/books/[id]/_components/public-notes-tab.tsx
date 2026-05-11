@@ -4,6 +4,13 @@ import { formatRelative } from "@/lib/format";
 import type { CustomData } from "@/types/schema";
 
 export function PublicNotesTab({ notes }: { notes: CustomData[] }) {
+  if (!notes.length)
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        No public notes yet.
+      </div>
+    );
+
   return (
     <div className="space-y-4">
       {notes.map((note) => {

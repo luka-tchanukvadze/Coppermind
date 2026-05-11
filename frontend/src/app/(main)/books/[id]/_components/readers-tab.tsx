@@ -8,6 +8,13 @@ export interface ReaderEntry {
 }
 
 export function ReadersTab({ readers }: { readers: ReaderEntry[] }) {
+  if (!readers.length)
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        No readers yet.
+      </div>
+    );
+
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
       {readers.map(({ user, status }) => (

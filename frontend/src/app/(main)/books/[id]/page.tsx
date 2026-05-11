@@ -1,16 +1,11 @@
 "use client";
 import { notFound, useParams } from "next/navigation";
+import type { CustomData, DiscussionWithCounts } from "@/types/schema";
 import { BookCover } from "@/components/shared/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  USERS,
-  CUSTOM_DATA,
-  DISCUSSIONS,
-  discussionWithCounts,
-} from "@/lib/mocks/dummy";
 import { BookActions } from "./_components/book-actions";
-import { ReadersTab } from "./_components/readers-tab";
+import { ReadersTab, type ReaderEntry } from "./_components/readers-tab";
 import { PublicNotesTab } from "./_components/public-notes-tab";
 import { RelatedDiscussionsTab } from "./_components/related-discussions-tab";
 import { useBook } from "@/lib/api/books";
@@ -31,17 +26,10 @@ export default function BookDetailPage() {
     );
   if (!book) notFound();
 
-  // Sample 8 users as readers (no real "readers" relation in schema; this is dummy).
-  const readers = USERS.slice(0, 8).map((u, i) => ({
-    user: u,
-    status: ["Reading", "Finished", "Want to read"][i % 3] as string,
-  }));
-
-  // Public CustomData entries across all users.
-  const publicNotes = CUSTOM_DATA.filter((cd) => !cd.isPrivate).slice(0, 5);
-
-  // Schema doesn't link Discussion to Book yet; show recent threads as related.
-  const discussions = DISCUSSIONS.slice(0, 3).map(discussionWithCounts);
+  // empty for now - Phase B fills these from real endpoints
+  const readers: ReaderEntry[] = [];
+  const publicNotes: CustomData[] = [];
+  const discussions: DiscussionWithCounts[] = [];
 
   return (
     <div className="grid gap-8 pb-10 md:grid-cols-[320px_minmax(0,1fr)] md:gap-10">
