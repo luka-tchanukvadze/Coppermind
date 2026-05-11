@@ -1,4 +1,3 @@
-// listBooks, getBook, searchBooks
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import type { Book } from "@/types/schema";
@@ -11,7 +10,12 @@ type BooksResponse = {
   data: { books: Book[] };
 };
 
-// unwrapped shape
+// single - no pagination wrapping
+type SingleBookResponse = {
+  data: { book: Book };
+};
+
+// unwrapped (flat for the UI)
 type BooksResult = {
   total: number;
   page: number;
@@ -19,7 +23,8 @@ type BooksResult = {
   books: Book[];
 };
 
-// get all books
+// fetching data
+
 async function fetchAllBooks(
   page: number,
   limit: number,
@@ -27,7 +32,7 @@ async function fetchAllBooks(
   const res = await apiClient.get<BooksResponse>(
     `/books?page=${page}&limit=${limit}`,
   );
-
+  // flatten envelope -> result
   return {
     total: res.total,
     page: res.page,
@@ -36,6 +41,14 @@ async function fetchAllBooks(
   };
 }
 
+async function fetchSingleBook(id: string): Promise<Book> {
+  const res = await apiClient.get<SingleBookResponse>(`/books/${id}`);
+  return res.data.book;
+}
+
+// react query hooks
+
+// page in queryKey -> each page gets its own cache slot
 function useBooks(page: number = 1, limit: number = 20) {
   return useQuery({
     queryKey: ["books", page, limit],
@@ -43,4 +56,13 @@ function useBooks(page: number = 1, limit: number = 20) {
   });
 }
 
-export { useBooks };
+// id can be undef on mount - guard with enabled
+function useSingleBook(id: string) {
+  return useQuery({
+    queryKey: ["book", id],
+    queryFn: () => fetchSingleBook(id),
+    enabled: !!id,
+  });
+}
+
+export { useBooks, useSingleBook };
