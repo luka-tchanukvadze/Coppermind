@@ -15,7 +15,8 @@ type SingleBookResponse = {
   data: { book: Book };
 };
 
-// unwrapped (flat for the UI)
+//// unwrapped ////
+// (flat for the UI)
 type BooksResult = {
   total: number;
   page: number;
@@ -23,8 +24,7 @@ type BooksResult = {
   books: Book[];
 };
 
-// fetching data
-
+////fetching data//////
 async function fetchAllBooks(
   page: number,
   limit: number,
@@ -57,7 +57,7 @@ function useBooks(page: number = 1, limit: number = 20) {
 }
 
 // id can be undef on mount - guard with enabled
-function useSingleBook(id: string) {
+function useBook(id: string) {
   return useQuery({
     queryKey: ["book", id],
     queryFn: () => fetchSingleBook(id),
@@ -65,4 +65,4 @@ function useSingleBook(id: string) {
   });
 }
 
-export { useBooks, useSingleBook };
+export { useBooks, useBook };

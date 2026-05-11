@@ -1,16 +1,34 @@
-import { notFound } from "next/navigation";
+"use client";
+import { notFound, useParams } from "next/navigation";
 import { BookCover } from "@/components/shared/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getBook, USERS, CUSTOM_DATA, DISCUSSIONS, discussionWithCounts } from "@/lib/mocks/dummy";
+import {
+  USERS,
+  CUSTOM_DATA,
+  DISCUSSIONS,
+  discussionWithCounts,
+} from "@/lib/mocks/dummy";
 import { BookActions } from "./_components/book-actions";
 import { ReadersTab } from "./_components/readers-tab";
 import { PublicNotesTab } from "./_components/public-notes-tab";
 import { RelatedDiscussionsTab } from "./_components/related-discussions-tab";
+import { useBook } from "@/lib/api/books";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ApiError } from "@/lib/api/client";
 
-export default async function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const book = getBook(id);
+export default function BookDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: book, isLoading, error } = useBook(id);
+
+  if (isLoading) return <Skeleton className="aspect-2/3 w-65" />;
+  if (error && error instanceof ApiError && error.status === 404) notFound();
+  if (error)
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Could not load book. Try again in a moment.
+      </div>
+    );
   if (!book) notFound();
 
   // Sample 8 users as readers (no real "readers" relation in schema; this is dummy).
@@ -42,7 +60,9 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
         <h1 className="wrap-break-word font-serif text-3xl font-medium leading-[1.1] text-ink sm:text-4xl md:text-5xl">
           {book.title}
         </h1>
-        <p className="mt-2 wrap-break-word text-base italic text-muted sm:text-lg">by {book.author}</p>
+        <p className="mt-2 wrap-break-word text-base italic text-muted sm:text-lg">
+          by {book.author}
+        </p>
 
         <div className="mt-6 flex flex-wrap gap-2">
           {book.genres.map((g) => (
@@ -60,9 +80,15 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
               <TabsTrigger value="discussions">Related discussions</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="readers"><ReadersTab readers={readers} /></TabsContent>
-            <TabsContent value="notes"><PublicNotesTab notes={publicNotes} /></TabsContent>
-            <TabsContent value="discussions"><RelatedDiscussionsTab discussions={discussions} /></TabsContent>
+            <TabsContent value="readers">
+              <ReadersTab readers={readers} />
+            </TabsContent>
+            <TabsContent value="notes">
+              <PublicNotesTab notes={publicNotes} />
+            </TabsContent>
+            <TabsContent value="discussions">
+              <RelatedDiscussionsTab discussions={discussions} />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
