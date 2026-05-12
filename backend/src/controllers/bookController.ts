@@ -7,20 +7,6 @@ import redisClient from "../redisClient.js";
 // one Redis key for the whole public list - simple to invalidate on writes. Fine until I need to scale
 const BOOKS_CACHE_KEY = "all_books";
 
-type GoogleBookItem = {
-  id: string;
-  volumeInfo: {
-    title?: string;
-    authors?: string[];
-    categories?: string[];
-    imageLinks?: { thumbnail?: string };
-  };
-};
-
-type GoogleBooksResponse = {
-  items?: GoogleBookItem[];
-};
-
 // addBook: admin-only. Seeds new entries into the global catalog.
 export const addBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
