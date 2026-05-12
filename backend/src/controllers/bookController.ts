@@ -4,6 +4,10 @@ import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
 import redisClient from "../redisClient.js";
 
+import { searchGoogleBooks } from "../services/googleBooks.js";
+import { searchOpenLibrary } from "../services/openLibrary.js";
+import type { BookSearchResult } from "../services/types.js";
+
 // one Redis key for the whole public list - simple to invalidate on writes. Fine until I need to scale
 const BOOKS_CACHE_KEY = "all_books";
 
@@ -82,57 +86,34 @@ export const getBook = catchAsync(
   },
 );
 
-// searchBooks: google books proxy. Results aren't in my DB - addUserBook upserts on add
+// searchBooks: google primary, OL fallback. Results aren't in my DB - addUserBook upserts on add
 export const searchBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const q = req.query.q as string | undefined;
     if (!q) return next(new AppError("Query parameter 'q' is required", 400));
 
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&key=${process.env.GOOGLE_BOOKS_API_KEY}`;
+    let books: BookSearchResult[];
+    let source: "google" | "openlibrary";
 
-    // retry 5xx (google api issue). 4xx = my bug, bail
-    let response: globalThis.Response | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      response = await fetch(url);
-      if (response.ok || response.status < 500) break;
-      if (attempt < 2)
-        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+    try {
+      books = await searchGoogleBooks(q);
+      source = "google";
+    } catch (err) {
+      console.error("Google search failed, falling back to OpenLibrary:", err);
+      try {
+        books = await searchOpenLibrary(q);
+        source = "openlibrary";
+      } catch (olErr) {
+        console.error("OpenLibrary search also failed:", olErr);
+        return next(
+          new AppError("Search service is temporarily unavailable", 502),
+        );
+      }
     }
-
-    // loop runs at least once but TS doesn't know that, so i need guard
-    if (!response) {
-      return next(
-        new AppError("Search service is temporarily unavailable", 502),
-      );
-    }
-
-    if (!response.ok) {
-      // log full error on the server, send a simple message to the client
-      console.error(
-        "Google Books API error:",
-        response.status,
-        await response.text(),
-      );
-      return next(
-        new AppError("Search service is temporarily unavailable", 502),
-      );
-    }
-
-    const data = (await response.json()) as GoogleBooksResponse;
-
-    // no title = useless. skip
-    const books = (data.items || [])
-      .filter((item) => item.volumeInfo.title)
-      .map((item) => ({
-        title: item.volumeInfo.title,
-        author: item.volumeInfo.authors?.[0] ?? "Unknown",
-        genres: item.volumeInfo.categories ?? [],
-        coverImage: item.volumeInfo.imageLinks?.thumbnail ?? "",
-        externalApiId: item.id,
-      }));
 
     res.status(200).json({
       status: "success",
+      source,
       totalItems: books.length,
       data: { books },
     });

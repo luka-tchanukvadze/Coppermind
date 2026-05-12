@@ -5,13 +5,14 @@ type OpenLibraryDoc = {
   author_name?: string[];
   subject?: string[];
   cover_i?: number; // numeric cover id, becomes URL
-  key: string;
+  key: string; // /works/OL12345W
 };
 type OpenLibraryResponse = {
   numFound?: number;
   docs?: OpenLibraryDoc[];
 };
 
+// open library search. Used as fallback when google fails
 export async function searchOpenLibrary(
   q: string,
 ): Promise<BookSearchResult[]> {

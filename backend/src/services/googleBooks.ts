@@ -14,6 +14,7 @@ type GoogleBooksResponse = {
   items?: GoogleBookItem[];
 };
 
+// google books search. Throws on any failure -> controller falls back to OL
 export async function searchGoogleBooks(
   q: string,
 ): Promise<BookSearchResult[]> {
