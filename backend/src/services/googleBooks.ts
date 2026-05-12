@@ -1,10 +1,4 @@
-export type BookSearchResult = {
-  title: string;
-  author: string;
-  genres: string[];
-  coverImage: string;
-  externalApiId: string;
-};
+import type { BookSearchResult } from "./types.js";
 
 type GoogleBookItem = {
   id: string;
