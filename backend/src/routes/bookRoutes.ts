@@ -13,6 +13,8 @@ router
   .post(authController.restrictTo("admin"), bookController.addBook)
   .get(bookController.getAllBooks);
 
+router.route("/search").get(bookController.searchBooks);
+
 router.route("/:id").get(bookController.getBook);
 
 export default router;

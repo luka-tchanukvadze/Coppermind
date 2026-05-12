@@ -7,6 +7,20 @@ import redisClient from "../redisClient.js";
 // one Redis key for the whole public list - simple to invalidate on writes. Fine until I need to scale
 const BOOKS_CACHE_KEY = "all_books";
 
+type GoogleBookItem = {
+  id: string;
+  volumeInfo: {
+    title?: string;
+    authors?: string[];
+    categories?: string[];
+    imageLinks?: { thumbnail?: string };
+  };
+};
+
+type GoogleBooksResponse = {
+  items?: GoogleBookItem[];
+};
+
 // addBook: admin-only. Seeds new entries into the global catalog.
 export const addBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -78,6 +92,63 @@ export const getBook = catchAsync(
     res.status(200).json({
       status: "success",
       data: { book },
+    });
+  },
+);
+
+// searchBooks: google books proxy. Results aren't in my DB - addUserBook upserts on add
+export const searchBooks = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const q = req.query.q as string | undefined;
+    if (!q) return next(new AppError("Query parameter 'q' is required", 400));
+
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&key=${process.env.GOOGLE_BOOKS_API_KEY}`;
+
+    // retry 5xx (google api issue). 4xx = my bug, bail
+    let response: globalThis.Response | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      response = await fetch(url);
+      if (response.ok || response.status < 500) break;
+      if (attempt < 2)
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+    }
+
+    // loop runs at least once but TS doesn't know that, so i need guard
+    if (!response) {
+      return next(
+        new AppError("Search service is temporarily unavailable", 502),
+      );
+    }
+
+    if (!response.ok) {
+      // log full error on the server, send a simple message to the client
+      console.error(
+        "Google Books API error:",
+        response.status,
+        await response.text(),
+      );
+      return next(
+        new AppError("Search service is temporarily unavailable", 502),
+      );
+    }
+
+    const data = (await response.json()) as GoogleBooksResponse;
+
+    // no title = useless. skip
+    const books = (data.items || [])
+      .filter((item) => item.volumeInfo.title)
+      .map((item) => ({
+        title: item.volumeInfo.title,
+        author: item.volumeInfo.authors?.[0] ?? "Unknown",
+        genres: item.volumeInfo.categories ?? [],
+        coverImage: item.volumeInfo.imageLinks?.thumbnail ?? "",
+        externalApiId: item.id,
+      }));
+
+    res.status(200).json({
+      status: "success",
+      totalItems: books.length,
+      data: { books },
     });
   },
 );
