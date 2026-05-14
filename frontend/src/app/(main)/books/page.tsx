@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -52,11 +52,21 @@ export default function BooksPage() {
           <div className="relative w-full sm:w-72">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <Input
-              className="w-full pl-9"
+              className="w-full pl-9 pr-9"
               placeholder="Search title or author..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
+            {query.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         }
       />
