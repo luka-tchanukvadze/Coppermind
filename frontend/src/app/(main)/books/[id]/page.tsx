@@ -41,7 +41,15 @@ export default function BookDetailPage() {
           size="xl"
           className="w-full"
         />
-        <BookActions />
+        <BookActions
+          book={{
+            title: book.title,
+            author: book.author,
+            genres: book.genres,
+            coverImage: book.coverImage,
+            externalApiId: book.externalApiId ?? "",
+          }}
+        />
       </div>
 
       <div className="min-w-0 pt-2">
