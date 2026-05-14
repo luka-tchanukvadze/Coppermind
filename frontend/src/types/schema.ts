@@ -33,6 +33,14 @@ export interface UserBook {
   bookId: string;
 }
 
+export interface BookSearchResult {
+  title: string;
+  author: string;
+  genres: string[];
+  coverImage: string;
+  externalApiId: string;
+}
+
 export interface CustomData {
   id: string;
   title: string;

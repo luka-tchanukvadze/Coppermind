@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { Book } from "@/types/schema";
+import type { Book, BookSearchResult } from "@/types/schema";
+import { useDebouncedValue } from "../hooks/use-debounced-value";
 
 // wire shape (what backend sends)
 type BooksResponse = {
@@ -24,7 +25,21 @@ type BooksResult = {
   books: Book[];
 };
 
+// search
+type SearchResponse = {
+  source: "google" | "openlibrary";
+  totalItems: number;
+  data: { books: BookSearchResult[] };
+};
+
+type SearchResult = {
+  books: BookSearchResult[];
+  source: "google" | "openlibrary";
+};
+
+//////////////////
 ////fetching data//////
+//////////////////
 async function fetchAllBooks(
   page: number,
   limit: number,
@@ -46,6 +61,17 @@ async function fetchSingleBook(id: string): Promise<Book> {
   return res.data.book;
 }
 
+async function fetchSearchBooks(query: string): Promise<SearchResult> {
+  const res = await apiClient.get<SearchResponse>(
+    `/books/search?q=${encodeURIComponent(query)}`,
+  );
+
+  return {
+    books: res.data.books,
+    source: res.source,
+  };
+}
+
 // react query hooks
 
 // page in queryKey -> each page gets its own cache slot
@@ -65,4 +91,14 @@ function useBook(id: string) {
   });
 }
 
-export { useBooks, useBook };
+function useSearchBooks(query: string) {
+  const debounced = useDebouncedValue(query, 300);
+
+  return useQuery({
+    queryKey: ["books-search", debounced],
+    queryFn: () => fetchSearchBooks(debounced),
+    enabled: debounced.trim().length > 2,
+  });
+}
+
+export { useBooks, useBook, useSearchBooks };
