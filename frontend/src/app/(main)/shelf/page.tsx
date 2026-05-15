@@ -1,10 +1,7 @@
 "use client";
-import Link from "next/link";
-import { Lock, ArrowUpRight } from "lucide-react";
+
 import { PageHeader } from "@/components/shared/page-header";
-import { BookCover } from "@/components/shared/book-cover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -12,10 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatShortDate, progressLabel } from "@/lib/format";
-import type { UserBookWithBook } from "@/types/schema";
 import { useUserBooks } from "@/lib/api/user-books";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ShelfList } from "@/components/shelf/shelf-list";
+import { ShelfListSkeleton } from "@/components/shelf/shelf-list-skeleton";
 
 export default function ShelfPage() {
   const { data: shelf, isLoading, error } = useUserBooks(1, 100);
@@ -27,24 +23,7 @@ export default function ShelfPage() {
     read: books.filter((b) => b.progress === "READ"),
   };
 
-  // loading - skeleton rows match the list shape so layout doesn't jump
-  if (isLoading) {
-    return (
-      <ul className="divide-y divide-border">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <li key={i} className="flex items-center gap-3 py-4 sm:gap-5 sm:py-5">
-            <Skeleton className="aspect-2/3 w-13 shrink-0" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-3 w-1/3" />
-              <Skeleton className="h-3 w-1/4" />
-            </div>
-            <Skeleton className="h-6 w-16 shrink-0" />
-          </li>
-        ))}
-      </ul>
-    );
-  }
+  if (isLoading) return <ShelfListSkeleton />;
 
   if (error) {
     return (
@@ -110,74 +89,5 @@ export default function ShelfPage() {
         </TabsContent>
       </Tabs>
     </>
-  );
-}
-
-function ShelfList({ books }: { books: UserBookWithBook[] }) {
-  if (books.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted">
-        Nothing here yet.
-      </div>
-    );
-  }
-  return (
-    <ul className="divide-y divide-border">
-      {books.map((ub) => (
-        <li key={ub.id}>
-          <Link
-            href={`/shelf/${ub.id}`}
-            className="group flex items-center gap-3 py-4 transition-colors hover:bg-muted-bg/30 sm:gap-5 sm:py-5"
-          >
-            <BookCover
-              coverImage={ub.book.coverImage}
-              title={ub.book.title}
-              size="sm"
-            />
-
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="truncate font-serif text-base font-medium text-ink group-hover:text-accent">
-                  {ub.book.title}
-                </h3>
-                {ub.isPrivate && (
-                  <Lock className="h-3.5 w-3.5 shrink-0 text-muted" />
-                )}
-              </div>
-              <div className="truncate text-sm italic text-muted">
-                {ub.book.author}
-              </div>
-              <div className="mt-1 text-xs text-muted">
-                Added {formatShortDate(ub.createdAt)}
-                {ub.customDataCount > 0 && (
-                  <span>
-                    {" "}
-                    · {ub.customDataCount}{" "}
-                    {ub.customDataCount === 1 ? "entry" : "entries"}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <Badge
-              variant={
-                ub.progress === "READING"
-                  ? "default"
-                  : ub.progress === "READ"
-                    ? "gold"
-                    : "muted"
-              }
-              className="shrink-0"
-            >
-              {progressLabel(ub.progress)}
-            </Badge>
-
-            <div className="hidden items-center gap-1 text-sm font-medium text-accent opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex">
-              View notes <ArrowUpRight className="h-4 w-4" />
-            </div>
-          </Link>
-        </li>
-      ))}
-    </ul>
   );
 }
