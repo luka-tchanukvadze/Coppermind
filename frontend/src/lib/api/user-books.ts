@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import type {
   BookSearchResult,
+  CustomData,
   Progress,
   UserBookWithBook,
 } from "@/types/schema";
@@ -14,6 +15,11 @@ type AddToShelfInput = BookSearchResult & {
 
 type UserBooksResponse = {
   data: { userBooks: UserBookWithBook[] };
+};
+
+// /user-books/:id - single book with embedded customData
+type UserBookResponse = {
+  data: { userBook: UserBookWithBook & { customData: CustomData[] } };
 };
 
 async function addToShelfRequest(input: AddToShelfInput) {
@@ -28,6 +34,13 @@ async function fetchAllUserBooks(
     `/user-books?page=${page}&limit=${limit}`,
   );
   return res.data.userBooks;
+}
+
+async function fetchUserBook(
+  id: string,
+): Promise<UserBookWithBook & { customData: CustomData[] }> {
+  const res = await apiClient.get<UserBookResponse>(`/user-books/${id}`);
+  return res.data.userBook;
 }
 
 function useAddToShelf() {
@@ -50,4 +63,12 @@ function useUserBooks(page: number = 1, limit: number = 200) {
   });
 }
 
-export { useAddToShelf, useUserBooks };
+function useUserBook(id: string) {
+  return useQuery({
+    queryKey: ["user-book", id],
+    queryFn: () => fetchUserBook(id),
+    enabled: !!id,
+  });
+}
+
+export { useAddToShelf, useUserBooks, useUserBook };
