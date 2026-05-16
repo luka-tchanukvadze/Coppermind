@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   User as UserIcon,
-  Shield,
+  // Shield,  // privacy section commented out - not wired to backend yet
   AlertTriangle,
   Mail,
   LogOut,
@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AccountSection } from "./account-section";
 import { ProfileSection } from "./profile-section";
-import { PrivacySection } from "./privacy-section";
+// import { PrivacySection } from "./privacy-section";  // commented out - no backend yet
 import { DangerSection } from "./danger-section";
 import { useMe } from "@/lib/api/users";
 import { useRouter } from "next/navigation";
@@ -31,7 +31,7 @@ interface NavItem {
 const SECTIONS: NavItem[] = [
   { id: "account", label: "Account", icon: Mail },
   { id: "profile", label: "Profile", icon: UserIcon },
-  { id: "privacy", label: "Privacy defaults", icon: Shield },
+  // { id: "privacy", label: "Privacy defaults", icon: Shield },  // commented out
   { id: "danger", label: "Danger zone", icon: AlertTriangle },
 ];
 
@@ -104,7 +104,7 @@ export function SettingsShell() {
             photo={user?.photo ?? "default.jpg"}
           />
         )}
-        {section === "privacy" && <PrivacySection />}
+        {/* {section === "privacy" && <PrivacySection />} */}
         {section === "danger" && <DangerSection />}
       </div>
     </div>

@@ -53,6 +53,7 @@ export function UserBookAside({
           label="Private shelf"
           helper="When off, friends can see this book on your shelf."
           idSuffix={userBook.id}
+          userBookId={userBook.id}
         />
 
         <dl className="space-y-2 text-xs text-muted">
