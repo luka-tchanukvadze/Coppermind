@@ -22,6 +22,11 @@ type UserBookResponse = {
   data: { userBook: UserBookWithBook & { customData: CustomData[] } };
 };
 
+type UpdateUserBookInput = {
+  progress?: Progress;
+  isPrivate?: boolean;
+};
+
 async function addToShelfRequest(input: AddToShelfInput) {
   return apiClient.post("/user-books", input);
 }
@@ -41,6 +46,10 @@ async function fetchUserBook(
 ): Promise<UserBookWithBook & { customData: CustomData[] }> {
   const res = await apiClient.get<UserBookResponse>(`/user-books/${id}`);
   return res.data.userBook;
+}
+
+async function updateUserBookRequst(id: string, input: UpdateUserBookInput) {
+  return apiClient.patch(`/user-books/${id}`, input);
 }
 
 function useAddToShelf() {
@@ -71,4 +80,17 @@ function useUserBook(id: string) {
   });
 }
 
-export { useAddToShelf, useUserBooks, useUserBook };
+function useUpdateUserBook(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateUserBookInput) => updateUserBookRequst(id, input),
+    onSuccess: () => {
+      // shelf list changes, this entry changes
+      queryClient.invalidateQueries({ queryKey: ["user-books"] });
+      queryClient.invalidateQueries({ queryKey: ["user-book", id] });
+    },
+  });
+}
+
+export { useAddToShelf, useUserBooks, useUserBook, useUpdateUserBook };
