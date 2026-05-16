@@ -50,7 +50,10 @@ export default function UserBookDetailPage() {
           book={userBook.book}
           entryCount={userBook.customData.length}
         />
-        <UserBookEntries entries={userBook.customData} />
+        <UserBookEntries
+          entries={userBook.customData}
+          userBookId={userBook.id}
+        />
       </div>
     </>
   );
