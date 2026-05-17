@@ -1,9 +1,39 @@
-import { Button } from "@/components/ui/button";
-import { SectionHeader } from "./section-header";
+"use client";
 
-// Backend currently only supports soft delete via DELETE /users/deleteMe (sets active: false).
-// There is no hard-delete endpoint, so we only surface "Deactivate" here.
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { SectionHeader } from "./section-header";
+import { useDeleteMe } from "@/lib/api/users";
+
 export function DangerSection() {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const deleteMe = useDeleteMe();
+
+  const handleDeactivate = () => {
+    deleteMe.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.clear();
+        router.push("/");
+        toast.success("Account deactivated. You've been signed out.");
+      },
+      onError: () => toast.error("Failed to deactivate. Try again?"),
+    });
+  };
+
   return (
     <section>
       <SectionHeader
@@ -15,14 +45,48 @@ export function DangerSection() {
           <div>
             <div className="font-medium text-ink">Deactivate account</div>
             <p className="mt-1 max-w-prose text-sm text-muted">
-              Hide your profile, shelves, and notes from everyone. You can reactivate any time by
-              logging back in. To permanently delete your account and all your data, contact
-              support.
+              Disables logins. Existing content stays visible.
             </p>
           </div>
-          <Button variant="outline" className="shrink-0 border-error/40 text-error hover:bg-error/10">
-            Deactivate account
-          </Button>
+
+          <Dialog
+            open={open}
+            onOpenChange={(o) => !deleteMe.isPending && setOpen(o)}
+          >
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="shrink-0 border-error/40 text-error hover:bg-error/10"
+              >
+                Deactivate account
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Deactivate your account?</DialogTitle>
+                <DialogDescription>
+                  You will be signed out and unable to log back in.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="ghost"
+                  onClick={() => setOpen(false)}
+                  disabled={deleteMe.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-error/40 text-error hover:bg-error/10"
+                  onClick={handleDeactivate}
+                  disabled={deleteMe.isPending}
+                >
+                  {deleteMe.isPending ? "Deactivating..." : "Yes, deactivate"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </section>
