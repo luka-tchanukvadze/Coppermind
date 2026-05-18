@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { useSignup } from "@/lib/api/auth";
 import { SignupSchema, type SignupInput } from "@/lib/schemas/auth";
 
 export default function SignupPage() {
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const router = useRouter();
   const signup = useSignup();
 
@@ -26,7 +28,13 @@ export default function SignupPage() {
 
   const onValid = (data: SignupInput) => {
     signup.mutate(data, {
-      onSuccess: () => router.push("/feed"),
+      onSuccess: () => {
+        router.push(
+          returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
+            ? returnUrl
+            : "/feed",
+        );
+      },
       onError: (err) => toast.error(err.message),
     });
   };

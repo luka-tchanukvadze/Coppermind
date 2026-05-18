@@ -8,11 +8,13 @@ import { useForm } from "react-hook-form";
 import { type LoginInput, LoginSchema } from "@/lib/schemas/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLogin } from "@/lib/api/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const router = useRouter();
   const login = useLogin();
   const queryClient = useQueryClient();
@@ -29,7 +31,11 @@ export default function LoginPage() {
     login.mutate(data, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["me"] });
-        router.push("/feed");
+        router.push(
+          returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
+            ? returnUrl
+            : "/feed",
+        );
       },
       onError: (err) => toast.error(err.message),
     });
