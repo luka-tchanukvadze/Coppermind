@@ -17,6 +17,8 @@ type UpdatePasswordInput = {
   newPasswordConfirm: string;
 };
 
+type UserResponse = { data: { user: User } };
+
 async function fetchMe(): Promise<User> {
   const res = await apiClient.get<MeResponse>("/users/me");
   return res.data.user;
@@ -32,6 +34,11 @@ async function updatePasswordRequest(input: UpdatePasswordInput) {
 
 async function deleteMeRequest() {
   return apiClient.delete("/users/deleteMe");
+}
+
+async function fetchUser(id: string): Promise<User> {
+  const res = await apiClient.get<UserResponse>(`/users/${id}`);
+  return res.data.user;
 }
 
 function useMe() {
@@ -58,4 +65,12 @@ function useDeleteMe() {
   return useMutation({ mutationFn: deleteMeRequest });
 }
 
-export { useMe, useUpdateMe, useUpdatePassword, useDeleteMe };
+function useUser(id: string) {
+  return useQuery({
+    queryKey: ["user", id],
+    queryFn: () => fetchUser(id),
+    enabled: !!id,
+  });
+}
+
+export { useMe, useUpdateMe, useUpdatePassword, useDeleteMe, useUser };
