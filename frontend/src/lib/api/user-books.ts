@@ -27,6 +27,10 @@ type UpdateUserBookInput = {
   isPrivate?: boolean;
 };
 
+type PublicUserBooksResponse = {
+  data: { friendBooks: UserBookWithBook[] };
+};
+
 async function addToShelfRequest(input: AddToShelfInput) {
   return apiClient.post("/user-books", input);
 }
@@ -50,6 +54,15 @@ async function fetchUserBook(
 
 async function updateUserBookRequst(id: string, input: UpdateUserBookInput) {
   return apiClient.patch(`/user-books/${id}`, input);
+}
+
+async function fetchPublicUserBooks(
+  userId: string,
+): Promise<UserBookWithBook[]> {
+  const res = await apiClient.get<PublicUserBooksResponse>(
+    `/user-books/user/${userId}`,
+  );
+  return res.data.friendBooks;
 }
 
 function useAddToShelf() {
@@ -93,4 +106,18 @@ function useUpdateUserBook(id: string) {
   });
 }
 
-export { useAddToShelf, useUserBooks, useUserBook, useUpdateUserBook };
+function useUserBooksForUser(userId: string) {
+  return useQuery({
+    queryKey: ["user-books-for-user", userId],
+    queryFn: () => fetchPublicUserBooks(userId),
+    enabled: !!userId,
+  });
+}
+
+export {
+  useAddToShelf,
+  useUserBooks,
+  useUserBook,
+  useUpdateUserBook,
+  useUserBooksForUser,
+};
