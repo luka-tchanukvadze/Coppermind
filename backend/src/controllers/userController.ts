@@ -95,6 +95,8 @@ export const deleteMe = catchAsync(
       data: { active: false },
     });
 
+    // sign them out too - otherwise the cookie stays and frontend middleware bounces to /feed
+    res.cookie("jwt", "", { expires: new Date(0), httpOnly: true });
     res.status(204).end();
   },
 );
