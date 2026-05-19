@@ -10,6 +10,7 @@ router.use(authController.protect);
 // ─── Static routes first (before :friendId catches them) ───
 router.route("/").get(friendController.getFriends);
 router.route("/requests").get(friendController.getIncomingRequests);
+router.route("/sent").get(friendController.getOutgoingRequests);
 router.route("/mutual/:friendId").get(friendController.getMutualFriends);
 
 // ─── :friendId routes - send, remove, accept ───

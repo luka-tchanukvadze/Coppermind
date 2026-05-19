@@ -54,6 +54,23 @@ export const getIncomingRequests = catchAsync(
   },
 );
 
+export const getOutgoingRequests = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+
+    const result = await prisma.friendConnection.findMany({
+      where: { requesterId: userId, status: "PENDING" },
+      include: { addressee: { select: { id: true, name: true, photo: true } } },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: result.length,
+      data: { result },
+    });
+  },
+);
+
 export const acceptRequest = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
