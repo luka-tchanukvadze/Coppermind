@@ -38,6 +38,10 @@ async function fetchMutualFriends(friendId: string): Promise<FriendUser[]> {
   return res.data.mutualFriends;
 }
 
+async function sendFriendRequest(friendId: string) {
+  return apiClient.post(`/friends/${friendId}`);
+}
+
 function useFriends() {
   return useQuery({
     queryKey: ["friends"],
@@ -67,9 +71,23 @@ function useMutualFriends(friendId: string) {
   });
 }
 
+function useSendFriendRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: sendFriendRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-incoming"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-outgoing"] });
+    },
+  });
+}
+
 export {
   useFriends,
   useIncomingRequests,
   useOutgoingRequests,
   useMutualFriends,
+  useSendFriendRequest,
 };
