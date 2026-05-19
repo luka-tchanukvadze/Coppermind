@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
-type FriendUser = { id: string; name: string; photo: string | null };
+export type FriendUser = { id: string; name: string; photo: string | null };
 type FriendConnection = {
   id: string;
   requesterId: string;

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { avatarSrc } from "@/lib/avatars";
 
 interface UserPicProps {
-  photo: string;
+  photo: string | null | undefined;
   name: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
