@@ -19,6 +19,8 @@ type UpdatePasswordInput = {
 
 type UserResponse = { data: { user: User } };
 
+type AllUsersResponse = { data: { users: User[] } };
+
 async function fetchMe(): Promise<User> {
   const res = await apiClient.get<MeResponse>("/users/me");
   return res.data.user;
@@ -43,6 +45,13 @@ async function fetchUser(id: string): Promise<User> {
 
 function useMe() {
   return useQuery({ queryKey: ["me"], queryFn: fetchMe });
+}
+
+// TODO: swap for GET /users?q=<search> + useSearchUsers(q) debounced
+//  needs backend: name/email ILIKE filter, limit ~20, pagination
+async function fetchAllUsers(): Promise<User[]> {
+  const res = await apiClient.get<AllUsersResponse>("/users");
+  return res.data.users;
 }
 
 function useUpdateMe() {
@@ -73,4 +82,18 @@ function useUser(id: string) {
   });
 }
 
-export { useMe, useUpdateMe, useUpdatePassword, useDeleteMe, useUser };
+function useAllUsers() {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: () => fetchAllUsers(),
+  });
+}
+
+export {
+  useMe,
+  useUpdateMe,
+  useUpdatePassword,
+  useDeleteMe,
+  useUser,
+  useAllUsers,
+};
