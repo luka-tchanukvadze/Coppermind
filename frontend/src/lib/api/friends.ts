@@ -20,10 +20,23 @@ async function fetchFriends(): Promise<FriendConnection[]> {
   return res.data.result;
 }
 
+async function fetchIncomingRequests(): Promise<FriendConnection[]> {
+  const res = await apiClient.get<FriendListResponse>("/friends/requests");
+  return res.data.result;
+}
+
 function useFriends() {
   return useQuery({
     queryKey: ["friends"],
     queryFn: () => fetchFriends(),
   });
 }
-export { useFriends };
+
+function useIncomingRequests() {
+  return useQuery({
+    queryKey: ["friends-incoming"],
+    queryFn: () => fetchIncomingRequests(),
+  });
+}
+
+export { useFriends, useIncomingRequests };
