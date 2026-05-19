@@ -42,6 +42,10 @@ async function sendFriendRequest(friendId: string) {
   return apiClient.post(`/friends/${friendId}`);
 }
 
+async function acceptFriendRequest(friendId: string) {
+  return apiClient.patch(`/friends/${friendId}/accept`);
+}
+
 function useFriends() {
   return useQuery({
     queryKey: ["friends"],
@@ -84,10 +88,24 @@ function useSendFriendRequest() {
   });
 }
 
+function useAcceptFriendRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: acceptFriendRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-incoming"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-outgoing"] });
+    },
+  });
+}
+
 export {
   useFriends,
   useIncomingRequests,
   useOutgoingRequests,
   useMutualFriends,
   useSendFriendRequest,
+  useAcceptFriendRequest,
 };
