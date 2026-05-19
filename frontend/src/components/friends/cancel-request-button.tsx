@@ -1,24 +1,32 @@
 "use client";
 
-import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useRemoveFriend } from "@/lib/api/friends";
 
-export function CancelRequestButton({ name }: { name: string }) {
-  const [cancelled, setCancelled] = useState(false);
+interface CancelRequestButtonProps {
+  name: string;
+  friendId: string;
+}
 
-  if (cancelled) return <span className="text-xs text-muted">Cancelled</span>;
+export function CancelRequestButton({ name, friendId }: CancelRequestButtonProps) {
+  const cancel = useRemoveFriend();
+
+  const handleCancel = () => {
+    cancel.mutate(friendId, {
+      onSuccess: () => toast.success(`Request to ${name} cancelled`),
+      onError: (err) => toast.error(err.message),
+    });
+  };
 
   return (
     <Button
       size="sm"
       variant="ghost"
-      onClick={() => {
-        setCancelled(true);
-        toast.success(`Request to ${name} cancelled`);
-      }}
+      disabled={cancel.isPending}
+      onClick={handleCancel}
     >
-      Cancel
+      {cancel.isPending ? "Cancelling..." : "Cancel"}
     </Button>
   );
 }

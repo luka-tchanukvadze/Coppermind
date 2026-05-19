@@ -18,10 +18,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRemoveFriend } from "@/lib/api/friends";
 
-// Backend: DELETE /friends/:friendId removes the connection in either direction.
-export function FriendCardMenu({ friendName }: { friendName: string }) {
+interface FriendCardMenuProps {
+  friendName: string;
+  friendId: string;
+}
+
+export function FriendCardMenu({ friendName, friendId }: FriendCardMenuProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const remove = useRemoveFriend();
+
+  const handleRemove = () => {
+    remove.mutate(friendId, {
+      onSuccess: () => {
+        setConfirmOpen(false);
+        toast.success(`${friendName} removed`);
+      },
+      onError: (err) => toast.error(err.message),
+    });
+  };
 
   return (
     <>
@@ -54,15 +70,19 @@ export function FriendCardMenu({ friendName }: { friendName: string }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button
+              variant="ghost"
+              disabled={remove.isPending}
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                setConfirmOpen(false);
-                toast.success(`${friendName} removed`);
-              }}
+              disabled={remove.isPending}
+              onClick={handleRemove}
             >
-              Remove friend
+              {remove.isPending ? "Removing..." : "Remove friend"}
             </Button>
           </DialogFooter>
         </DialogContent>
