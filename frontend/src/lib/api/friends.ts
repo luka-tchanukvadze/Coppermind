@@ -1,4 +1,3 @@
-// listFriends, sendRequest, acceptRequest, rejectRequest, cancelRequest, removeFriend
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
@@ -44,6 +43,10 @@ async function sendFriendRequest(friendId: string) {
 
 async function acceptFriendRequest(friendId: string) {
   return apiClient.patch(`/friends/${friendId}/accept`);
+}
+
+async function removeFriend(friendId: string) {
+  return apiClient.delete(`/friends/${friendId}`);
 }
 
 function useFriends() {
@@ -101,6 +104,19 @@ function useAcceptFriendRequest() {
   });
 }
 
+function useRemoveFriend() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: removeFriend,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-incoming"] });
+      queryClient.invalidateQueries({ queryKey: ["friends-outgoing"] });
+    },
+  });
+}
+
 export {
   useFriends,
   useIncomingRequests,
@@ -108,4 +124,5 @@ export {
   useMutualFriends,
   useSendFriendRequest,
   useAcceptFriendRequest,
+  useRemoveFriend,
 };
