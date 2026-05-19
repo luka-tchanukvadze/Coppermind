@@ -14,6 +14,7 @@ type FriendConnection = {
 };
 
 type FriendListResponse = { data: { result: FriendConnection[] } };
+type MutualFriendsResponse = { data: { mutualFriends: FriendUser[] } };
 
 async function fetchFriends(): Promise<FriendConnection[]> {
   const res = await apiClient.get<FriendListResponse>("/friends");
@@ -22,6 +23,11 @@ async function fetchFriends(): Promise<FriendConnection[]> {
 
 async function fetchIncomingRequests(): Promise<FriendConnection[]> {
   const res = await apiClient.get<FriendListResponse>("/friends/requests");
+  return res.data.result;
+}
+
+async function fetchOutgoingRequests(): Promise<FriendConnection[]> {
+  const res = await apiClient.get<FriendListResponse>("/friends/sent");
   return res.data.result;
 }
 
@@ -39,4 +45,11 @@ function useIncomingRequests() {
   });
 }
 
-export { useFriends, useIncomingRequests };
+function useOutgoingRequests() {
+  return useQuery({
+    queryKey: ["friends-outgoing"],
+    queryFn: () => fetchOutgoingRequests(),
+  });
+}
+
+export { useFriends, useIncomingRequests, useOutgoingRequests };
