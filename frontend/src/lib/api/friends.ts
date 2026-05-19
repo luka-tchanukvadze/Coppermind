@@ -31,6 +31,13 @@ async function fetchOutgoingRequests(): Promise<FriendConnection[]> {
   return res.data.result;
 }
 
+async function fetchMutualFriends(friendId: string): Promise<FriendUser[]> {
+  const res = await apiClient.get<MutualFriendsResponse>(
+    `/friends/mutual/${friendId}`,
+  );
+  return res.data.mutualFriends;
+}
+
 function useFriends() {
   return useQuery({
     queryKey: ["friends"],
@@ -52,4 +59,17 @@ function useOutgoingRequests() {
   });
 }
 
-export { useFriends, useIncomingRequests, useOutgoingRequests };
+function useMutualFriends(friendId: string) {
+  return useQuery({
+    queryKey: ["friends-mutual", friendId],
+    queryFn: () => fetchMutualFriends(friendId),
+    enabled: !!friendId,
+  });
+}
+
+export {
+  useFriends,
+  useIncomingRequests,
+  useOutgoingRequests,
+  useMutualFriends,
+};
