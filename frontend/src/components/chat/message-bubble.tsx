@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { MoreHorizontal, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -10,18 +9,24 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useUnsendMessage } from "@/lib/api/conversations";
 import type { Message } from "@/types/schema";
 
 export function MessageBubble({ message, isMe }: { message: Message; isMe: boolean }) {
-  const [unsent, setUnsent] = useState(false);
+  const unsend = useUnsendMessage();
 
-  if (unsent) {
-    return (
-      <div className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-3 py-1 text-[11px] italic text-muted">
-        <Undo2 className="h-3 w-3" /> Message unsent
-      </div>
+  // optimistic messages have a temp id - can't unsend before the server confirms
+  const canUnsend = isMe && !message.id.startsWith("temp-");
+
+  const handleUnsend = () => {
+    unsend.mutate(
+      { conversationId: message.conversationId, messageId: message.id },
+      {
+        onSuccess: () => toast.success("Message unsent"),
+        onError: (err) => toast.error(err.message),
+      },
     );
-  }
+  };
 
   return (
     // Outer is the bubble itself + holds the absolutely-positioned dropdown.
@@ -40,7 +45,7 @@ export function MessageBubble({ message, isMe }: { message: Message; isMe: boole
     >
       {message.text}
 
-      {isMe && (
+      {canUnsend && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -61,10 +66,8 @@ export function MessageBubble({ message, isMe }: { message: Message; isMe: boole
           <DropdownMenuContent align="end" side="top">
             <DropdownMenuItem
               className="text-error focus:text-error"
-              onSelect={() => {
-                setUnsent(true);
-                toast.success("Message unsent");
-              }}
+              disabled={unsend.isPending}
+              onSelect={handleUnsend}
             >
               <Undo2 className="h-3.5 w-3.5" /> Unsend message
             </DropdownMenuItem>

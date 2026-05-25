@@ -43,7 +43,7 @@ export function FriendCard({ friend }: { friend: FriendUser }) {
       </div>
       <div className="flex gap-2">
         <Button size="sm" asChild className="flex-1">
-          <Link href="/chat">
+          <Link href={`/chat/new?friendId=${friend.id}`}>
             <MessageCircle className="h-3.5 w-3.5" /> Message
           </Link>
         </Button>
