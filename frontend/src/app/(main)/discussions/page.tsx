@@ -1,17 +1,34 @@
-import Link from "next/link";
-import { MessageCircle, Heart } from "lucide-react";
+"use client";
+
 import { PageHeader } from "@/components/shared/page-header";
 import { UserPic } from "@/components/shared/user-pic";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NewDiscussionDialog } from "@/components/discussions/new-discussion-dialog";
-import { allDiscussions } from "@/lib/mocks/dummy";
-import { formatRelative } from "@/lib/format";
+import { DiscussionCard } from "@/components/discussions/discussion-card";
+import { useDiscussions } from "@/lib/api/discussions";
+import type { DiscussionWithCounts } from "@/types/schema";
 
 export default function DiscussionsPage() {
-  const all = allDiscussions();
+  const { data: all = [], isLoading, error } = useDiscussions();
   const byNew = [...all].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const byLikes = [...all].sort((a, b) => b.likeCount - a.likeCount);
   const byComments = [...all].sort((a, b) => b.commentCount - a.commentCount);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Could not load discussions. Try again in a moment.
+      </div>
+    );
+  }
 
   return (
     <>
@@ -30,9 +47,9 @@ export default function DiscussionsPage() {
               <TabsTrigger value="commented">Most commented</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="new"><List items={byNew} /></TabsContent>
-            <TabsContent value="liked"><List items={byLikes} /></TabsContent>
-            <TabsContent value="commented"><List items={byComments} /></TabsContent>
+            <TabsContent value="new"><DiscussionList items={byNew} /></TabsContent>
+            <TabsContent value="liked"><DiscussionList items={byLikes} /></TabsContent>
+            <TabsContent value="commented"><DiscussionList items={byComments} /></TabsContent>
           </Tabs>
         </div>
 
@@ -62,35 +79,20 @@ export default function DiscussionsPage() {
   );
 }
 
-function List({ items }: { items: ReturnType<typeof allDiscussions> }) {
+function DiscussionList({ items }: { items: DiscussionWithCounts[] }) {
+  if (items.length === 0) {
+    return (
+      <p className="py-10 text-center text-sm text-muted">
+        No discussions yet. Start one.
+      </p>
+    );
+  }
+
   return (
     <ul className="divide-y divide-border">
       {items.map((d) => (
         <li key={d.id}>
-          <Link href={`/discussions/${d.id}`} className="group block py-5 transition-colors">
-            <h3 className="wrap-break-word font-serif text-xl font-medium leading-tight text-accent group-hover:underline">
-              {d.title}
-            </h3>
-            <p className="mt-1.5 line-clamp-2 wrap-break-word text-sm leading-relaxed text-ink/80">
-              {d.description}
-            </p>
-            <footer className="mt-3 flex items-center gap-4 text-xs text-muted">
-              <div className="flex items-center gap-1.5">
-                <UserPic photo={d.creator.photo} name={d.creator.name} size="xs" />
-                <span>{d.creator.name}</span>
-              </div>
-              <span>·</span>
-              <span>{formatRelative(d.createdAt)}</span>
-              <span className="ml-auto flex items-center gap-3">
-                <span className="inline-flex items-center gap-1">
-                  <MessageCircle className="h-3.5 w-3.5" /> {d.commentCount}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Heart className="h-3.5 w-3.5" /> {d.likeCount}
-                </span>
-              </span>
-            </footer>
-          </Link>
+          <DiscussionCard discussion={d} />
         </li>
       ))}
     </ul>
