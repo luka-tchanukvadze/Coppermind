@@ -58,8 +58,13 @@ export const initSocket = (httpServer: HttpServer) => {
     console.log(`User connected: ${userId} -> ${socket.id}`);
 
     socket.on("disconnect", () => {
-      userSocketMap.delete(userId);
-      console.log(`User disconnected: ${userId}`);
+      // only clear if this socket is still the mapped one. a stale reconnect
+      // (or React StrictMode double-mount) can fire disconnect AFTER the new
+      // socket registered - deleting by userId alone would wipe the live entry
+      if (userSocketMap.get(userId) === socket.id) {
+        userSocketMap.delete(userId);
+        console.log(`User disconnected: ${userId}`);
+      }
     });
   });
 
