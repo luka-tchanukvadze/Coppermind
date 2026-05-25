@@ -45,6 +45,11 @@ export const getDiscussion = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id as string;
 
+    /* TODO add likedByMe so the frontend can show the right like state on load.
+       right now only the total count comes back - the like button can't tell
+       if the current user already liked it. add:
+         likes: { where: { userId: req.user!.id }, select: { id: true } }
+       then map likedByMe = likes.length > 0 in the response. */
     const discussion = await prisma.discussion.findUnique({
       where: { id },
       include: {
