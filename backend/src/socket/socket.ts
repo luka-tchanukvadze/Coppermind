@@ -1,5 +1,9 @@
 import { Server as SocketServer } from "socket.io";
 import type { Server as HttpServer } from "http";
+import jwt from "jsonwebtoken";
+
+import prisma from "../prisma.js";
+import { DecodedToken } from "../../../types.d.js";
 
 // Map userId -> socketId so I can send messages to specific users
 const userSocketMap = new Map<string, string>();
@@ -14,19 +18,48 @@ export const initSocket = (httpServer: HttpServer) => {
     },
   });
 
-  io.on("connection", (socket) => {
-    const userId = socket.handshake.query.userId as string;
+  // identity comes from the signed jwt cookie, not a query param
+  // Without this anyone could connect as any userId and read their messages
+  io.use(async (socket, next) => {
+    try {
+      const cookie = socket.handshake.headers.cookie;
+      const token = cookie
+        ?.split("; ")
+        .find((c) => c.startsWith("jwt="))
+        ?.slice(4);
 
-    if (userId) {
-      userSocketMap.set(userId, socket.id);
-      console.log(`User connected: ${userId} -> ${socket.id}`);
+      if (!token) return next(new Error("Not authenticated"));
+
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET as string,
+      ) as DecodedToken;
+
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { id: true, active: true },
+      });
+
+      if (!user || user.active === false) {
+        return next(new Error("Not authenticated"));
+      }
+
+      socket.data.userId = user.id;
+      next();
+    } catch {
+      next(new Error("Not authenticated"));
     }
+  });
+
+  io.on("connection", (socket) => {
+    const userId = socket.data.userId as string;
+
+    userSocketMap.set(userId, socket.id);
+    console.log(`User connected: ${userId} -> ${socket.id}`);
 
     socket.on("disconnect", () => {
-      if (userId) {
-        userSocketMap.delete(userId);
-        console.log(`User disconnected: ${userId}`);
-      }
+      userSocketMap.delete(userId);
+      console.log(`User disconnected: ${userId}`);
     });
   });
 
