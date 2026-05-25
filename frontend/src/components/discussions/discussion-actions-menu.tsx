@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -19,9 +20,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EditDiscussionDialog } from "./edit-discussion-dialog";
+import { useDeleteDiscussion } from "@/lib/api/discussions";
+import { useDeleteComment } from "@/lib/api/comments";
 
 interface Props {
   kind?: "discussion" | "comment";
+  discussionId: string;
+  commentId?: string; // required for comment kind
   // For discussion kind only - prefills the edit dialog.
   title?: string;
   description?: string;
@@ -30,9 +35,45 @@ interface Props {
 // Shown only when the current user owns the discussion (or comment).
 // Discussion kind offers edit + delete; comment kind offers delete only
 // (backend has no PATCH /comments route).
-export function DiscussionActionsMenu({ kind = "discussion", title = "", description = "" }: Props) {
+export function DiscussionActionsMenu({
+  kind = "discussion",
+  discussionId,
+  commentId,
+  title = "",
+  description = "",
+}: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const router = useRouter();
+  const deleteDiscussion = useDeleteDiscussion();
+  const deleteComment = useDeleteComment();
+
+  const isPending = deleteDiscussion.isPending || deleteComment.isPending;
+
+  const handleDelete = () => {
+    if (kind === "discussion") {
+      deleteDiscussion.mutate(discussionId, {
+        onSuccess: () => {
+          setDeleteOpen(false);
+          toast.success("Discussion deleted");
+          // the detail page we're on no longer exists
+          router.push("/discussions");
+        },
+        onError: (err) => toast.error(err.message),
+      });
+    } else {
+      deleteComment.mutate(
+        { discussionId, commentId: commentId! },
+        {
+          onSuccess: () => {
+            setDeleteOpen(false);
+            toast.success("Reply deleted");
+          },
+          onError: (err) => toast.error(err.message),
+        },
+      );
+    }
+  };
 
   return (
     <>
@@ -71,6 +112,7 @@ export function DiscussionActionsMenu({ kind = "discussion", title = "", descrip
         <EditDiscussionDialog
           open={editOpen}
           onOpenChange={setEditOpen}
+          discussionId={discussionId}
           defaultTitle={title}
           defaultDescription={description}
         />
@@ -88,14 +130,8 @@ export function DiscussionActionsMenu({ kind = "discussion", title = "", descrip
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setDeleteOpen(false);
-                toast.success(kind === "discussion" ? "Discussion deleted" : "Reply deleted");
-              }}
-            >
-              Delete {kind}
+            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
+              {isPending ? "Deleting..." : `Delete ${kind}`}
             </Button>
           </DialogFooter>
         </DialogContent>

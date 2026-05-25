@@ -4,9 +4,26 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useAddComment } from "@/lib/api/comments";
 
-export function ReplyComposer() {
+export function ReplyComposer({ discussionId }: { discussionId: string }) {
   const [text, setText] = useState("");
+  const addComment = useAddComment();
+
+  const handlePost = () => {
+    const content = text.trim();
+    if (!content) return;
+    addComment.mutate(
+      { discussionId, content },
+      {
+        onSuccess: () => {
+          setText("");
+          toast.success("Reply posted");
+        },
+        onError: (err) => toast.error(err.message),
+      },
+    );
+  };
 
   return (
     <div>
@@ -19,13 +36,10 @@ export function ReplyComposer() {
       />
       <div className="mt-3 flex justify-end">
         <Button
-          disabled={text.trim().length === 0}
-          onClick={() => {
-            setText("");
-            toast.success("Reply posted");
-          }}
+          disabled={text.trim().length === 0 || addComment.isPending}
+          onClick={handlePost}
         >
-          Post reply
+          {addComment.isPending ? "Posting..." : "Post reply"}
         </Button>
       </div>
     </div>

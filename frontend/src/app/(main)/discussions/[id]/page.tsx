@@ -1,4 +1,6 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Share2 } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
@@ -6,17 +8,36 @@ import { Button } from "@/components/ui/button";
 import { LikeButton } from "@/components/discussions/like-button";
 import { DiscussionActionsMenu } from "@/components/discussions/discussion-actions-menu";
 import { ReplyComposer } from "@/components/discussions/reply-composer";
-import { getDiscussion, discussionWithCounts, commentsFor, currentUser } from "@/lib/mocks/dummy";
+import { useDiscussion } from "@/lib/api/discussions";
+import { useMe } from "@/lib/api/users";
+import { ApiError } from "@/lib/api/client";
 import { formatRelative } from "@/lib/format";
 
-export default async function DiscussionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const d = getDiscussion(id);
-  if (!d) notFound();
-  const dwc = discussionWithCounts(d);
-  const comments = commentsFor(d.id);
-  const me = currentUser();
-  const isOwnDiscussion = d.creatorId === me.id;
+export default function DiscussionDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: d, isLoading, error } = useDiscussion(id);
+  const { data: me } = useMe();
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error instanceof ApiError && error.status === 404) notFound();
+  if (error || !d) {
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Could not load this discussion.
+      </div>
+    );
+  }
+
+  const comments = d.comments;
+  const commentCount = comments.length;
+  const isOwnDiscussion = d.creatorId === me?.id;
 
   return (
     <>
@@ -35,13 +56,17 @@ export default async function DiscussionDetailPage({ params }: { params: Promise
               {d.title}
             </h1>
             {isOwnDiscussion && (
-              <DiscussionActionsMenu title={d.title} description={d.description} />
+              <DiscussionActionsMenu
+                discussionId={d.id}
+                title={d.title}
+                description={d.description}
+              />
             )}
           </div>
           <div className="mt-5 flex items-center gap-3 text-sm text-muted">
-            <UserPic photo={dwc.creator.photo} name={dwc.creator.name} size="sm" />
+            <UserPic photo={d.creator.photo} name={d.creator.name} size="sm" />
             <div>
-              <div className="text-ink">{dwc.creator.name}</div>
+              <div className="text-ink">{d.creator.name}</div>
               <div className="text-xs">{formatRelative(d.createdAt)}</div>
             </div>
           </div>
@@ -54,9 +79,9 @@ export default async function DiscussionDetailPage({ params }: { params: Promise
         </div>
 
         <footer className="mt-8 flex flex-wrap items-center gap-2 border-y py-3">
-          <LikeButton initialCount={dwc.likeCount} />
+          <LikeButton discussionId={d.id} initialCount={d.likeCount} />
           <Button variant="ghost" size="sm" className="gap-1.5">
-            <MessageCircle className="h-4 w-4" /> {dwc.commentCount} replies
+            <MessageCircle className="h-4 w-4" /> {commentCount} replies
           </Button>
           <Button variant="ghost" size="sm" className="ml-auto gap-1.5">
             <Share2 className="h-4 w-4" /> Share
@@ -65,12 +90,12 @@ export default async function DiscussionDetailPage({ params }: { params: Promise
 
         <section className="mt-12">
           <h2 className="mb-6 font-serif text-2xl font-medium text-ink">
-            {dwc.commentCount} {dwc.commentCount === 1 ? "reply" : "replies"}
+            {commentCount} {commentCount === 1 ? "reply" : "replies"}
           </h2>
 
           <ul className="space-y-6">
             {comments.map((c) => {
-              const isOwnComment = c.userId === me.id;
+              const isOwnComment = c.userId === me?.id;
               return (
                 <li key={c.id} className="flex gap-3">
                   <UserPic photo={c.user.photo} name={c.user.name} size="sm" className="mt-0.5" />
@@ -81,7 +106,13 @@ export default async function DiscussionDetailPage({ params }: { params: Promise
                         <span className="text-muted">·</span>
                         <span className="text-muted">{formatRelative(c.createdAt)}</span>
                       </div>
-                      {isOwnComment && <DiscussionActionsMenu kind="comment" />}
+                      {isOwnComment && (
+                        <DiscussionActionsMenu
+                          kind="comment"
+                          discussionId={d.id}
+                          commentId={c.id}
+                        />
+                      )}
                     </header>
                     <p className="wrap-break-word text-sm leading-relaxed text-ink/90">{c.content}</p>
                   </div>
@@ -91,7 +122,7 @@ export default async function DiscussionDetailPage({ params }: { params: Promise
           </ul>
 
           <div className="mt-10">
-            <ReplyComposer />
+            <ReplyComposer discussionId={d.id} />
           </div>
         </section>
       </article>
