@@ -7,6 +7,7 @@ import userBookRouter from "./routes/userBookRoutes.js";
 import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import discussionRouter from "./routes/discussionRoutes.js";
+import feedRouter from "./routes/feedRoutes.js";
 
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
@@ -39,6 +40,7 @@ app.use("/api/v1/user-books", userBookRouter);
 app.use("/api/v1/friends", friendRouter);
 app.use("/api/v1/messages", messageRouter);
 app.use("/api/v1/discussions", discussionRouter);
+app.use("/api/v1/feed", feedRouter);
 
 /*
 TODO:
