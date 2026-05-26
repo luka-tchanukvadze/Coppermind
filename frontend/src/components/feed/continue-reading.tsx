@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, NotebookPen } from "lucide-react";
 import { BookCover } from "@/components/shared/book-cover";
-import { userBooksWithBook } from "@/lib/mocks/dummy";
+import { useUserBooks } from "@/lib/api/user-books";
 import { formatShortDate } from "@/lib/format";
 
 export function ContinueReading() {
-  const reading = userBooksWithBook().filter((ub) => ub.progress === "READING");
+  const { data: userBooks = [] } = useUserBooks();
+  const reading = userBooks.filter((ub) => ub.progress === "READING");
+
+  // silent hide while loading or if nothing in progress
   if (reading.length === 0) return null;
 
   return (

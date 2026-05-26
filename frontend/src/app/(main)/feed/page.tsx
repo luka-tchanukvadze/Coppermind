@@ -1,19 +1,71 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { FeedCard } from "@/components/feed/feed-card";
 import { ContinueReading } from "@/components/feed/continue-reading";
 import { Recommendations } from "@/components/feed/recommendations";
 import { UserPic } from "@/components/shared/user-pic";
-import { FEED_ITEMS, friendsOf, currentUser } from "@/lib/mocks/dummy";
+import { useFeed } from "@/lib/api/feed";
+import { useMe } from "@/lib/api/users";
 
 export default function FeedPage() {
-  const feed = FEED_ITEMS;
-  const friends = friendsOf().slice(0, 4);
-  const me = currentUser();
+  const { data: me } = useMe();
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useFeed();
+
+  // sentinel for infinite scroll - fetch the next page when this scrolls into view
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      // start loading 200px before the sentinel hits the viewport edge
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // flatten every loaded page into one activity list.
+  // friendsReading is the same across pages, so just grab it from page 0.
+  const activity = data?.pages.flatMap((p) => p.activity) ?? [];
+  const friendsReading = data?.pages[0]?.friendsReading ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
+        Could not load your feed. Try again in a moment.
+      </div>
+    );
+  }
 
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${me.name.split(" ")[0]}.`}
+        title={`Welcome back, ${me?.name?.split(" ")[0] ?? ""}.`}
         subtitle="Your library, your friends, what they're reading today."
       />
 
@@ -22,11 +74,30 @@ export default function FeedPage() {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div>
           <h2 className="mb-4 font-serif text-xl font-medium text-ink">Around your library</h2>
-          <div className="space-y-4">
-            {feed.map((item) => (
-              <FeedCard key={item.id} item={item} />
-            ))}
-          </div>
+
+          {activity.length === 0 ? (
+            <p className="rounded-md border border-dashed bg-surface/40 p-8 text-center text-sm text-muted">
+              No activity yet. Add friends and start your shelf to see updates here.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {activity.map((item) => (
+                <FeedCard key={item.id} item={item} />
+              ))}
+
+              {/* sentinel - observer-driven load-more */}
+              <div
+                ref={loadMoreRef}
+                className="py-6 text-center text-xs text-muted"
+              >
+                {isFetchingNextPage
+                  ? "Loading more..."
+                  : hasNextPage
+                    ? "Scroll for more"
+                    : "You're all caught up."}
+              </div>
+            </div>
+          )}
         </div>
 
         <aside className="space-y-8">
@@ -36,20 +107,31 @@ export default function FeedPage() {
             <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-muted">
               Friends reading now
             </h2>
-            <ul className="space-y-2.5">
-              {friends.map((friend, i) => {
-                const sampleBooks = ["Piranesi", "Babel", "Sea of Tranquility", "The Bee Sting"];
-                return (
-                  <li key={friend.id} className="flex items-center gap-3 text-sm">
-                    <UserPic photo={friend.photo} name={friend.name} size="sm" />
+            {friendsReading.length === 0 ? (
+              <p className="text-sm text-muted">No one&apos;s reading right now.</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {friendsReading.map(({ user, book }) => (
+                  <li key={user.id} className="flex items-center gap-3 text-sm">
+                    <UserPic photo={user.photo} name={user.name} size="sm" />
                     <div className="min-w-0">
-                      <div className="truncate text-ink">{friend.name}</div>
-                      <div className="truncate text-xs italic text-muted">{sampleBooks[i]}</div>
+                      <Link
+                        href={`/profile/${user.id}`}
+                        className="block truncate text-ink hover:text-accent"
+                      >
+                        {user.name}
+                      </Link>
+                      <Link
+                        href={`/books/${book.id}`}
+                        className="block truncate text-xs italic text-muted hover:text-accent"
+                      >
+                        {book.title}
+                      </Link>
                     </div>
                   </li>
-                );
-              })}
-            </ul>
+                ))}
+              </ul>
+            )}
           </section>
         </aside>
       </div>
