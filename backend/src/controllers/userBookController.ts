@@ -80,7 +80,10 @@ export const getAllUserBooks = catchAsync(
 
     const userBooks = await prisma.userBook.findMany({
       ...query,
-      include: query.select ? undefined : { book: true },
+      // _count is used by feed's Continue Reading ("3 entries" per card)
+      include: query.select
+        ? undefined
+        : { book: true, _count: { select: { customData: true } } },
     });
 
     res.status(200).json({
