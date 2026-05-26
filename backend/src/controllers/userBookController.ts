@@ -4,6 +4,11 @@ import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
 import redisClient from "../redisClient.js";
 import APIFeatures from "../utils/apiFeatures.js";
+import {
+  createActivity,
+  progressToActivityKind,
+} from "../utils/createActivity.js";
+import { ActivityKind, Progress } from "../../generated/prisma/index.js";
 
 const BOOKS_CACHE_KEY = "all_books";
 
@@ -43,6 +48,13 @@ export const addUserBook = catchAsync(
 
     // Invalidate global books cache since upsert may have added a new book
     await redisClient.del(BOOKS_CACHE_KEY);
+
+    // log shelf event for the feed (fire-and-forget)
+    void createActivity({
+      userId,
+      kind: progressToActivityKind(progress as Progress),
+      bookId: book.id,
+    });
 
     res.status(201).json({
       status: "success",
@@ -127,20 +139,28 @@ export const updateUserBook = catchAsync(
     // Only these fields are user-editable
     const { progress, isPrivate } = req.body;
 
-    // Ownership check + update in one query
-    const result = await prisma.userBook.updateMany({
-      where: { id, userId },
-      data: { progress, isPrivate },
+    // fetch first so I can ownership-check AND compare old vs new progress
+    const existing = await prisma.userBook.findUnique({
+      where: { id },
+      select: { userId: true, bookId: true, progress: true },
     });
-
-    if (result.count === 0)
+    if (!existing || existing.userId !== userId)
       return next(new AppError("No book found with that ID", 404));
 
-    // updateMany returns count only - fetch the full record to return it
-    const updatedBook = await prisma.userBook.findUnique({
+    const updatedBook = await prisma.userBook.update({
       where: { id },
+      data: { progress, isPrivate },
       include: { book: true },
     });
+
+    // log shelf event only when progress actually changed
+    if (progress && progress !== existing.progress) {
+      void createActivity({
+        userId,
+        kind: progressToActivityKind(progress as Progress),
+        bookId: existing.bookId,
+      });
+    }
 
     res.status(200).json({
       status: "success",
@@ -202,6 +222,15 @@ export const addCustomData = catchAsync(
     const customData = await prisma.customData.create({
       data: { title, content, isPrivate, userBookId, userId },
     });
+
+    // only public notes show up in the feed
+    if (!isPrivate) {
+      void createActivity({
+        userId,
+        kind: ActivityKind.PUBLIC_NOTE,
+        customDataId: customData.id,
+      });
+    }
 
     res.status(201).json({
       status: "success",

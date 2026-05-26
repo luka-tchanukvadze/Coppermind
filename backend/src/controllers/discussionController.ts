@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync.js";
 import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
+import { createActivity } from "../utils/createActivity.js";
+import { ActivityKind } from "../../generated/prisma/index.js";
 
 export const createDiscussion = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -10,6 +12,12 @@ export const createDiscussion = catchAsync(
 
     const discussion = await prisma.discussion.create({
       data: { title, description, creatorId: userId },
+    });
+
+    void createActivity({
+      userId,
+      kind: ActivityKind.NEW_DISCUSSION,
+      discussionId: discussion.id,
     });
 
     res.status(201).json({
@@ -117,6 +125,12 @@ export const addComment = catchAsync(
 
     const comment = await prisma.comment.create({
       data: { content, userId, discussionId: id },
+    });
+
+    void createActivity({
+      userId,
+      kind: ActivityKind.DISCUSSION_COMMENT,
+      commentId: comment.id,
     });
 
     res.status(201).json({
