@@ -28,6 +28,7 @@ model User {
   discussions          Discussion[]
   comments             Comment[]
   likes                Like[]
+  activities           Activity[]
 
   @@map("users")
 }
@@ -41,6 +42,7 @@ model Book {
   externalApiId String?    @db.VarChar(255)
 
   userBooks     UserBook[]
+  activities    Activity[]
 
   @@map("books")
 }
@@ -74,6 +76,7 @@ model CustomData {
   user        User      @relation(fields: [userId], references: [id])
   userBookId  String
   userBook    UserBook   @relation(fields: [userBookId], references: [id])
+  activities  Activity[]
 
   @@map("custom_data")
 }
@@ -138,6 +141,7 @@ model Discussion {
   creator     User      @relation(fields: [creatorId], references: [id])
   comments    Comment[]
   likes       Like[]
+  activities  Activity[]
 
   @@map("discussions")
 }
@@ -151,6 +155,7 @@ model Comment {
   user          User       @relation(fields: [userId], references: [id])
   discussionId  String
   discussion    Discussion @relation(fields: [discussionId], references: [id])
+  activities    Activity[]
 
   @@map("comments")
 }
@@ -184,4 +189,38 @@ enum Status {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+model Activity {
+  id        String       @id @default(uuid())
+  kind      ActivityKind
+  createdAt DateTime     @default(now())
+
+  // who did the thing
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+
+  // only one of these has a value, based on the kind
+  // if the linked thing is deleted, this row is deleted too
+  bookId         String?
+  book           Book?       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  discussionId   String?
+  discussion     Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  commentId      String?
+  comment        Comment?    @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  customDataId   String?
+  customData     CustomData? @relation(fields: [customDataId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+enum ActivityKind {
+  WANTS_TO_READ
+  STARTED_READING
+  FINISHED_BOOK
+  NEW_DISCUSSION
+  DISCUSSION_COMMENT
+  PUBLIC_NOTE
 }
