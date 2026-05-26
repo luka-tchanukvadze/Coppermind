@@ -13,8 +13,12 @@ type AddToShelfInput = BookSearchResult & {
   isPrivate?: boolean; // default false
 };
 
+// backend includes _count for "Continue reading" entry counts (feed page)
+type UserBookApi = Omit<UserBookWithBook, "customDataCount"> & {
+  _count?: { customData: number };
+};
 type UserBooksResponse = {
-  data: { userBooks: UserBookWithBook[] };
+  data: { userBooks: UserBookApi[] };
 };
 
 // /user-books/:id - single book with embedded customData
@@ -42,7 +46,11 @@ async function fetchAllUserBooks(
   const res = await apiClient.get<UserBooksResponse>(
     `/user-books?page=${page}&limit=${limit}`,
   );
-  return res.data.userBooks;
+  // flatten _count -> customDataCount the way the UI types expect
+  return res.data.userBooks.map(({ _count, ...rest }) => ({
+    ...rest,
+    customDataCount: _count?.customData ?? 0,
+  }));
 }
 
 async function fetchUserBook(
