@@ -78,6 +78,7 @@ model CustomData {
   userBook    UserBook   @relation(fields: [userBookId], references: [id])
   activities  Activity[]
 
+  @@index([userBookId])
   @@map("custom_data")
 }
 
@@ -92,6 +93,7 @@ model FriendConnection {
   addressee     User     @relation("Addressee", fields: [addresseeId], references: [id])
 
   @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
   @@map("friend_connections")
 }
 
@@ -115,6 +117,7 @@ model Message {
   conversationId  String
   conversation    Conversation @relation(fields: [conversationId], references: [id])
 
+  @@index([conversationId, createdAt])
   @@map("messages")
 }
 
@@ -127,6 +130,7 @@ model ConversationParticipant {
   conversation    Conversation @relation(fields: [conversationId], references: [id])
 
   @@unique([userId, conversationId])
+  @@index([conversationId])
   @@map("conversation_participants")
 }
 
@@ -157,6 +161,7 @@ model Comment {
   discussion    Discussion @relation(fields: [discussionId], references: [id])
   activities    Activity[]
 
+  @@index([discussionId, createdAt])
   @@map("comments")
 }
 
@@ -170,6 +175,7 @@ model Like {
   discussion    Discussion @relation(fields: [discussionId], references: [id])
 
   @@unique([userId, discussionId])
+  @@index([discussionId])
   @@map("likes")
 }
 
