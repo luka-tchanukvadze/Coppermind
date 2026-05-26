@@ -19,16 +19,18 @@ type DiscussionDetailApi = Discussion & {
   creator: Creator;
   comments: CommentWithUser[];
   _count: { likes: number };
+  likedByMe: boolean;
 };
 
 type DiscussionsResponse = { data: { discussions: DiscussionListApi[] } };
 type DiscussionResponse = { data: { discussion: DiscussionDetailApi } };
 
-// detail view model: flat likeCount + embedded comments
+// detail view model: flat likeCount + embedded comments + likedByMe for the heart state
 export type DiscussionDetail = Discussion & {
   creator: Creator;
   comments: CommentWithUser[];
   likeCount: number;
+  likedByMe: boolean;
 };
 
 type CreateDiscussionInput = { title: string; description: string };
@@ -67,6 +69,7 @@ async function fetchDiscussion(id: string): Promise<DiscussionDetail> {
     creator: d.creator,
     comments: d.comments,
     likeCount: d._count.likes,
+    likedByMe: d.likedByMe,
   };
 }
 
@@ -132,8 +135,6 @@ function useDeleteDiscussion() {
   });
 }
 
-// only the count is correct on load - backend has no likedByMe yet (see
-// getDiscussion TODO). the filled/unfilled state can't persist across refresh.
 function useToggleLike(id: string) {
   const queryClient = useQueryClient();
   return useMutation({

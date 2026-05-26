@@ -79,7 +79,11 @@ export default function DiscussionDetailPage() {
         </div>
 
         <footer className="mt-8 flex flex-wrap items-center gap-2 border-y py-3">
-          <LikeButton discussionId={d.id} initialCount={d.likeCount} />
+          <LikeButton
+            discussionId={d.id}
+            initialCount={d.likeCount}
+            initialLiked={d.likedByMe}
+          />
           <Button variant="ghost" size="sm" className="gap-1.5">
             <MessageCircle className="h-4 w-4" /> {commentCount} replies
           </Button>
