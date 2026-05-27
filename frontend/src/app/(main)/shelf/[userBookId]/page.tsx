@@ -42,7 +42,7 @@ export default function UserBookDetailPage() {
 
   return (
     <>
-      <BackBar />
+      <BackBar userBookId={userBook.id} />
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
         <UserBookAside

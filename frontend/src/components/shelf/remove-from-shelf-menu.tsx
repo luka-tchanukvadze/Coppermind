@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal, Trash } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -18,9 +19,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRemoveFromShelf } from "@/lib/api/user-books";
 
-export function RemoveFromShelfMenu() {
+export function RemoveFromShelfMenu({ userBookId }: { userBookId: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const router = useRouter();
+  const removeFromShelf = useRemoveFromShelf(userBookId);
+
+  const handleRemove = () => {
+    removeFromShelf.mutate(undefined, {
+      onSuccess: () => {
+        setConfirmOpen(false);
+        toast.success("Book removed from shelf");
+        router.push("/shelf");
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    });
+  };
 
   return (
     <>
@@ -52,15 +69,19 @@ export function RemoveFromShelfMenu() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button
+              variant="ghost"
+              onClick={() => setConfirmOpen(false)}
+              disabled={removeFromShelf.isPending}
+            >
+              Cancel
+            </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                setConfirmOpen(false);
-                toast.success("Book removed from shelf");
-              }}
+              onClick={handleRemove}
+              disabled={removeFromShelf.isPending}
             >
-              Remove book
+              {removeFromShelf.isPending ? "Removing..." : "Remove book"}
             </Button>
           </DialogFooter>
         </DialogContent>

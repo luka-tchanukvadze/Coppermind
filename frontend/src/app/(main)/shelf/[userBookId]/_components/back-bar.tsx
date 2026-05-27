@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RemoveFromShelfMenu } from "@/components/shelf/remove-from-shelf-menu";
 
-export function BackBar() {
+export function BackBar({ userBookId }: { userBookId: string }) {
   return (
     <div className="mb-6 flex items-center justify-between">
       <Button asChild variant="ghost" size="sm" className="-ml-3">
@@ -11,7 +11,7 @@ export function BackBar() {
           <ArrowLeft className="h-4 w-4" /> Back to shelf
         </Link>
       </Button>
-      <RemoveFromShelfMenu />
+      <RemoveFromShelfMenu userBookId={userBookId} />
     </div>
   );
 }

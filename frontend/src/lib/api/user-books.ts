@@ -124,10 +124,25 @@ function useUserBooksForUser(userId: string) {
   });
 }
 
+function useRemoveFromShelf(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.delete<void>(`/user-books/${id}`),
+    onSuccess: () => {
+      // shelf list shrinks, this entry is gone, my recs shift
+      queryClient.invalidateQueries({ queryKey: ["user-books"] });
+      queryClient.removeQueries({ queryKey: ["user-book", id] });
+      queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+    },
+  });
+}
+
 export {
   useAddToShelf,
   useUserBooks,
   useUserBook,
   useUpdateUserBook,
   useUserBooksForUser,
+  useRemoveFromShelf,
 };
