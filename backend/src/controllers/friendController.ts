@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync.js";
 import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
+import { invalidateRecs } from "../utils/recCache.js";
 
 export const sendRequest = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -84,6 +85,9 @@ export const acceptRequest = catchAsync(
     if (result.count === 0)
       return next(new AppError("No Pending request found", 404));
 
+    // new friend signal affects recs for both sides
+    void invalidateRecs(userId, friendId);
+
     res.status(200).json({
       status: "success",
       message: "Friend request accepted",
@@ -107,6 +111,9 @@ export const removeConnection = catchAsync(
 
     if (result.count === 0)
       return next(new AppError("No connection found", 404));
+
+    // friendship gone -> recs change for both sides
+    void invalidateRecs(userId, friendId);
 
     res.status(204).json({});
   },

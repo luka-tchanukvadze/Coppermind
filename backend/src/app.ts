@@ -8,6 +8,7 @@ import friendRouter from "./routes/friendRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
 import discussionRouter from "./routes/discussionRoutes.js";
 import feedRouter from "./routes/feedRoutes.js";
+import recommendationsRouter from "./routes/recommendationsRoutes.js";
 
 import AppError from "./utils/appError.js";
 import globalErrorHandler from "./controllers/errorController.js";
@@ -41,6 +42,7 @@ app.use("/api/v1/friends", friendRouter);
 app.use("/api/v1/messages", messageRouter);
 app.use("/api/v1/discussions", discussionRouter);
 app.use("/api/v1/feed", feedRouter);
+app.use("/api/v1/recommendations", recommendationsRouter);
 
 /*
 TODO:
