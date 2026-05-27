@@ -4,6 +4,10 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { FeedCard } from "@/components/feed/feed-card";
+import {
+  FeedActivitySkeleton,
+  FriendsReadingSkeleton,
+} from "@/components/feed/feed-skeleton";
 import { ContinueReading } from "@/components/feed/continue-reading";
 import { Recommendations } from "@/components/feed/recommendations";
 import { UserPic } from "@/components/shared/user-pic";
@@ -46,22 +50,6 @@ export default function FeedPage() {
   const activity = data?.pages.flatMap((p) => p.activity) ?? [];
   const friendsReading = data?.pages[0]?.friendsReading ?? [];
 
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Could not load your feed. Try again in a moment.
-      </div>
-    );
-  }
-
   return (
     <>
       <PageHeader
@@ -75,7 +63,13 @@ export default function FeedPage() {
         <div>
           <h2 className="mb-4 font-serif text-xl font-medium text-ink">Around your library</h2>
 
-          {activity.length === 0 ? (
+          {isLoading ? (
+            <FeedActivitySkeleton />
+          ) : error ? (
+            <p className="rounded-md border border-dashed bg-surface/40 p-8 text-center text-sm text-muted">
+              Could not load your feed. Try again in a moment.
+            </p>
+          ) : activity.length === 0 ? (
             <p className="rounded-md border border-dashed bg-surface/40 p-8 text-center text-sm text-muted">
               No activity yet. Add friends and start your shelf to see updates here.
             </p>
@@ -107,7 +101,9 @@ export default function FeedPage() {
             <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-muted">
               Friends reading now
             </h2>
-            {friendsReading.length === 0 ? (
+            {isLoading ? (
+              <FriendsReadingSkeleton />
+            ) : friendsReading.length === 0 ? (
               <p className="text-sm text-muted">No one&apos;s reading right now.</p>
             ) : (
               <ul className="space-y-2.5">
