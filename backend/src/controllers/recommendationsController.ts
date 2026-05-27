@@ -35,23 +35,24 @@ export const getRecommendations = catchAsync(
       console.error("Recs cache read failed:", err);
     }
 
-    // step 1: my accepted friends
-    const friendships = await prisma.friendConnection.findMany({
-      where: {
-        status: "ACCEPTED",
-        OR: [{ requesterId: userId }, { addresseeId: userId }],
-      },
-      select: { requesterId: true, addresseeId: true },
-    });
+    // step 1 + 2 in parallel - independent queries, no reason to wait sequentially
+    const [friendships, mine] = await Promise.all([
+      prisma.friendConnection.findMany({
+        where: {
+          status: "ACCEPTED",
+          OR: [{ requesterId: userId }, { addresseeId: userId }],
+        },
+        select: { requesterId: true, addresseeId: true },
+      }),
+      // any progress state - just need the bookIds to exclude from recs
+      prisma.userBook.findMany({
+        where: { userId },
+        select: { bookId: true },
+      }),
+    ]);
     const friendIds = friendships.map((c) =>
       c.requesterId === userId ? c.addresseeId : c.requesterId,
     );
-
-    // step 2: books I already have - excluded from recs (any progress state)
-    const mine = await prisma.userBook.findMany({
-      where: { userId },
-      select: { bookId: true },
-    });
     const myBookIds = mine.map((b) => b.bookId);
 
     // tier 1: "your friends have this"
