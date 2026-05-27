@@ -71,7 +71,7 @@ export default function FeedPage() {
             </p>
           ) : activity.length === 0 ? (
             <p className="rounded-md border border-dashed bg-surface/40 p-8 text-center text-sm text-muted">
-              No activity yet. Add friends and start your shelf to see updates here.
+              Your feed is quiet. Add a few friends and start building your shelf - their reading will show up here.
             </p>
           ) : (
             <div className="space-y-4">
@@ -104,7 +104,7 @@ export default function FeedPage() {
             {isLoading ? (
               <FriendsReadingSkeleton />
             ) : friendsReading.length === 0 ? (
-              <p className="text-sm text-muted">No one&apos;s reading right now.</p>
+              <p className="text-sm text-muted">Nothing here yet. When your friends pick up a book, you&apos;ll see it.</p>
             ) : (
               <ul className="space-y-2.5">
                 {friendsReading.map(({ user, book }) => (

@@ -74,7 +74,9 @@ export default function FriendsPage() {
 
         <TabsContent value="friends">
           {friendUsers.length === 0 ? (
-            <p className="text-sm text-muted">No friends yet.</p>
+            <p className="text-sm text-muted">
+              No friends yet. Switch to <span className="font-medium text-ink">Find people</span> to send your first request.
+            </p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {friendUsers.map((friend) => (

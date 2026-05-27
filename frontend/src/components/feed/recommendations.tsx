@@ -67,7 +67,7 @@ export function Recommendations() {
           You might like
         </h2>
         <p className="rounded-md border border-dashed bg-surface/40 p-5 text-center text-sm text-muted">
-          No recommendations yet.
+          Add friends or fill out your shelf - picks will start showing up.
         </p>
       </section>
     );

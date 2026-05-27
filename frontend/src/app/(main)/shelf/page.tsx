@@ -36,7 +36,7 @@ export default function ShelfPage() {
   if (books.length === 0) {
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Your shelf is empty. Search for a book to add one.
+        Your shelf is empty. Head to the catalog and add your first book.
       </div>
     );
   }

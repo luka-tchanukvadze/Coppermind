@@ -11,7 +11,7 @@ export function ReadersTab({ readers }: { readers: ReaderEntry[] }) {
   if (!readers.length)
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        No readers yet.
+        No one&apos;s added this yet. Be the first to put it on your shelf.
       </div>
     );
 

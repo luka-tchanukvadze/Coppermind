@@ -83,7 +83,7 @@ function DiscussionList({ items }: { items: DiscussionWithCounts[] }) {
   if (items.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-muted">
-        No discussions yet. Start one.
+        No discussions yet. Start the conversation and see who joins in.
       </p>
     );
   }

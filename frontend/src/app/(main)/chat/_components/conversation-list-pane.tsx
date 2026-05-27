@@ -36,7 +36,7 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
       {isLoading ? (
         <p className="px-5 py-4 text-sm text-muted">Loading...</p>
       ) : convos.length === 0 ? (
-        <p className="px-5 py-4 text-sm text-muted">No conversations yet.</p>
+        <p className="px-5 py-4 text-sm text-muted">No conversations yet. Open a friend&apos;s profile to send the first message.</p>
       ) : (
         <ul className="flex-1 overflow-y-auto">
           {convos.map((c) => {
