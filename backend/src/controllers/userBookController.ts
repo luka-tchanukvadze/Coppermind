@@ -8,7 +8,7 @@ import {
   createActivity,
   progressToActivityKind,
 } from "../utils/createActivity.js";
-import { invalidateRecs } from "../utils/recCache.js";
+import { invalidateRecsForUserAndFriends } from "../utils/recCache.js";
 import { ActivityKind, Progress } from "../../generated/prisma/index.js";
 
 const BOOKS_CACHE_KEY = "all_books";
@@ -57,8 +57,9 @@ export const addUserBook = catchAsync(
       bookId: book.id,
     });
 
-    // my shelf changed -> my recs change too
-    void invalidateRecs(userId);
+    // my shelf changed -> my recs AND my friends' recs need refreshing
+    // (I'm now in/out of their "friends have this" pool)
+    void invalidateRecsForUserAndFriends(userId);
 
     res.status(201).json({
       status: "success",
@@ -134,8 +135,8 @@ export const deleteUserBook = catchAsync(
     if (result.count === 0)
       return next(new AppError("No book found with that ID", 404));
 
-    // my shelf changed -> my recs change too
-    void invalidateRecs(userId);
+    // my shelf changed -> my recs AND my friends' recs need refreshing
+    void invalidateRecsForUserAndFriends(userId);
 
     res.status(204).json({});
   },

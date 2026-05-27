@@ -125,8 +125,12 @@ export const getRecommendations = catchAsync(
       const excludeIds = [...myBookIds, ...tier1.map((r) => r.book.id)];
       const grouped = await prisma.userBook.groupBy({
         by: ["bookId"],
-        where:
-          excludeIds.length > 0 ? { bookId: { notIn: excludeIds } } : {},
+        where: {
+          // only count public shelf entries - private holders opted out of
+          // influencing recs (same rule as tier 1, consistent)
+          isPrivate: false,
+          ...(excludeIds.length > 0 ? { bookId: { notIn: excludeIds } } : {}),
+        },
         _count: { userId: true },
         orderBy: [{ _count: { userId: "desc" } }, { bookId: "asc" }],
         take: remaining,
