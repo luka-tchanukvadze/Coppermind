@@ -82,6 +82,8 @@ function useAddToShelf() {
       // catalog grew (if it was a new book) - invalidate browse list
       queryClient.invalidateQueries({ queryKey: ["books"] });
       queryClient.invalidateQueries({ queryKey: ["user-books"] });
+      // my shelf composition changed -> recs change too
+      queryClient.invalidateQueries({ queryKey: ["recommendations"] });
     },
   });
 }
