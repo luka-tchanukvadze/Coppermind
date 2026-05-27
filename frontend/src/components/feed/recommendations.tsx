@@ -67,7 +67,15 @@ export function Recommendations() {
           You might like
         </h2>
         <p className="rounded-md border border-dashed bg-surface/40 p-5 text-center text-sm text-muted">
-          Add friends or fill out your shelf - picks will start showing up.
+          Add{" "}
+          <Link href="/friends" className="font-medium text-accent hover:underline">
+            friends
+          </Link>{" "}
+          or fill out your{" "}
+          <Link href="/books" className="font-medium text-accent hover:underline">
+            shelf
+          </Link>{" "}
+          - picks will start showing up.
         </p>
       </section>
     );

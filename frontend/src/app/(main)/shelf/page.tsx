@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -36,7 +37,11 @@ export default function ShelfPage() {
   if (books.length === 0) {
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Your shelf is empty. Head to the catalog and add your first book.
+        Your shelf is empty. Head to the{" "}
+        <Link href="/books" className="font-medium text-accent hover:underline">
+          catalog
+        </Link>{" "}
+        and add your first book.
       </div>
     );
   }

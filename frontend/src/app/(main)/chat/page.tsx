@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MessageSquareMore } from "lucide-react";
 
 export default function ChatIndexPage() {
@@ -8,7 +9,11 @@ export default function ChatIndexPage() {
       </div>
       <h2 className="font-serif text-2xl font-medium text-ink">Select a conversation</h2>
       <p className="mt-2 max-w-sm text-sm text-muted">
-        Pick someone from the list, or start a new conversation from a friend&apos;s profile.
+        Pick someone from the list, or start a new one from a{" "}
+        <Link href="/friends" className="font-medium text-accent hover:underline">
+          friend&apos;s profile
+        </Link>
+        .
       </p>
     </div>
   );
