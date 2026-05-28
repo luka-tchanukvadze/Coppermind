@@ -18,6 +18,11 @@ export default function DiscussionsPage() {
   const byLikes = [...all].sort((a, b) => b.likeCount - a.likeCount);
   const byComments = [...all].sort((a, b) => b.commentCount - a.commentCount);
 
+  // dedupe by creator id - same person posting 6 threads shouldn't fill all 6 slots
+  const activeReaders = Array.from(
+    new Map(all.map((d) => [d.creator.id, d.creator])).values(),
+  ).slice(0, 6);
+
   return (
     <>
       <PageHeader
@@ -57,18 +62,18 @@ export default function DiscussionsPage() {
             ) : (
               <>
                 <div className="flex items-center">
-                  {all.slice(0, 6).map((d, i) => (
+                  {activeReaders.map((reader, i) => (
                     <UserPic
-                      key={d.id}
-                      photo={d.creator.photo}
-                      name={d.creator.name}
+                      key={reader.id}
+                      photo={reader.photo}
+                      name={reader.name}
                       size="sm"
                       className={i === 0 ? "border-2 border-background" : "-ml-2 border-2 border-background"}
                     />
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted">
-                  {all.length} active threads this week.
+                  {all.length} active threads.
                 </p>
               </>
             )}
