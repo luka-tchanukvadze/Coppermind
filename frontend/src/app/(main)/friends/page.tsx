@@ -9,6 +9,11 @@ import { FindUserCard } from "@/components/friends/find-user-card";
 import { IncomingRequestRow } from "@/components/friends/incoming-request-row";
 import { OutgoingRequestRow } from "@/components/friends/outgoing-request-row";
 import {
+  FriendGridSkeleton,
+  FindUserGridSkeleton,
+  RequestListSkeleton,
+} from "@/components/friends/friends-skeleton";
+import {
   useFriends,
   useIncomingRequests,
   useOutgoingRequests,
@@ -23,18 +28,8 @@ export default function FriendsPage() {
   const { data: outgoing = [], isLoading: outgoingLoading } = useOutgoingRequests();
   const { data: allUsers = [], isLoading: usersLoading } = useAllUsers();
 
-  const loading =
-    meLoading || friendsLoading || incomingLoading || outgoingLoading || usersLoading;
-
-  if (loading) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Loading...
-      </div>
-    );
-  }
-
-  if (meError || !me) {
+  // auth-fatal: bail without rendering tabs at all
+  if (meError) {
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
         Could not load friends. Try again in a moment.
@@ -42,22 +37,31 @@ export default function FriendsPage() {
     );
   }
 
-  // accepted connections include both sides - pick the one that isn't me
-  const friendUsers: FriendUser[] = friends
-    .map((c) => (c.requester?.id !== me.id ? c.requester : c.addressee))
-    .filter((u): u is FriendUser => !!u);
+  // computed views need `me` for self-filtering. default to empty until it's there
+  const friendUsers: FriendUser[] = me
+    ? friends
+        .map((c) => (c.requester?.id !== me.id ? c.requester : c.addressee))
+        .filter((u): u is FriendUser => !!u)
+    : [];
 
   // Find tab: drop self, existing friends, pending either direction
   const friendIdSet = new Set(friendUsers.map((u) => u.id));
   const incomingIdSet = new Set(incoming.map((c) => c.requester?.id));
   const outgoingIdSet = new Set(outgoing.map((c) => c.addressee?.id));
-  const candidates = allUsers.filter(
-    (u) =>
-      u.id !== me.id &&
-      !friendIdSet.has(u.id) &&
-      !incomingIdSet.has(u.id) &&
-      !outgoingIdSet.has(u.id),
-  );
+  const candidates = me
+    ? allUsers.filter(
+        (u) =>
+          u.id !== me.id &&
+          !friendIdSet.has(u.id) &&
+          !incomingIdSet.has(u.id) &&
+          !outgoingIdSet.has(u.id),
+      )
+    : [];
+
+  const friendsTabLoading = meLoading || friendsLoading;
+  const requestsTabLoading = incomingLoading || outgoingLoading;
+  const findTabLoading =
+    meLoading || friendsLoading || incomingLoading || outgoingLoading || usersLoading;
 
   return (
     <>
@@ -73,7 +77,9 @@ export default function FriendsPage() {
         </TabsList>
 
         <TabsContent value="friends">
-          {friendUsers.length === 0 ? (
+          {friendsTabLoading ? (
+            <FriendGridSkeleton />
+          ) : friendUsers.length === 0 ? (
             <p className="text-sm text-muted">
               No friends yet. Switch to <span className="font-medium text-ink">Find people</span> to send your first request.
             </p>
@@ -92,7 +98,9 @@ export default function FriendsPage() {
               <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-muted">
                 Incoming ({incoming.length})
               </h2>
-              {incoming.length === 0 ? (
+              {requestsTabLoading ? (
+                <RequestListSkeleton />
+              ) : incoming.length === 0 ? (
                 <p className="text-sm text-muted">No pending requests.</p>
               ) : (
                 <ul className="space-y-2">
@@ -112,7 +120,9 @@ export default function FriendsPage() {
               <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-muted">
                 Sent ({outgoing.length})
               </h2>
-              {outgoing.length === 0 ? (
+              {requestsTabLoading ? (
+                <RequestListSkeleton />
+              ) : outgoing.length === 0 ? (
                 <p className="text-sm text-muted">No pending sends.</p>
               ) : (
                 <ul className="space-y-2">
@@ -138,7 +148,9 @@ export default function FriendsPage() {
                 later: GET /users?q= for server-side search + pagination */}
           </div>
 
-          {candidates.length === 0 ? (
+          {findTabLoading ? (
+            <FindUserGridSkeleton />
+          ) : candidates.length === 0 ? (
             <p className="text-sm text-muted">No more people to add right now.</p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -152,4 +164,3 @@ export default function FriendsPage() {
     </>
   );
 }
-

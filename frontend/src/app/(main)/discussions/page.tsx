@@ -5,6 +5,10 @@ import { UserPic } from "@/components/shared/user-pic";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NewDiscussionDialog } from "@/components/discussions/new-discussion-dialog";
 import { DiscussionCard } from "@/components/discussions/discussion-card";
+import {
+  DiscussionListSkeleton,
+  ActiveReadersSkeleton,
+} from "@/components/discussions/discussions-skeleton";
 import { useDiscussions } from "@/lib/api/discussions";
 import type { DiscussionWithCounts } from "@/types/schema";
 
@@ -13,22 +17,6 @@ export default function DiscussionsPage() {
   const byNew = [...all].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const byLikes = [...all].sort((a, b) => b.likeCount - a.likeCount);
   const byComments = [...all].sort((a, b) => b.commentCount - a.commentCount);
-
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Could not load discussions. Try again in a moment.
-      </div>
-    );
-  }
 
   return (
     <>
@@ -47,9 +35,15 @@ export default function DiscussionsPage() {
               <TabsTrigger value="commented">Most commented</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="new"><DiscussionList items={byNew} /></TabsContent>
-            <TabsContent value="liked"><DiscussionList items={byLikes} /></TabsContent>
-            <TabsContent value="commented"><DiscussionList items={byComments} /></TabsContent>
+            <TabsContent value="new">
+              <DiscussionList items={byNew} isLoading={isLoading} error={!!error} />
+            </TabsContent>
+            <TabsContent value="liked">
+              <DiscussionList items={byLikes} isLoading={isLoading} error={!!error} />
+            </TabsContent>
+            <TabsContent value="commented">
+              <DiscussionList items={byComments} isLoading={isLoading} error={!!error} />
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -58,20 +52,26 @@ export default function DiscussionsPage() {
             <h2 className="mb-3 text-sm font-medium uppercase tracking-widest text-muted">
               Active readers
             </h2>
-            <div className="flex items-center">
-              {all.slice(0, 6).map((d, i) => (
-                <UserPic
-                  key={d.id}
-                  photo={d.creator.photo}
-                  name={d.creator.name}
-                  size="sm"
-                  className={i === 0 ? "border-2 border-background" : "-ml-2 border-2 border-background"}
-                />
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-muted">
-              {all.length} active threads this week.
-            </p>
+            {isLoading ? (
+              <ActiveReadersSkeleton />
+            ) : (
+              <>
+                <div className="flex items-center">
+                  {all.slice(0, 6).map((d, i) => (
+                    <UserPic
+                      key={d.id}
+                      photo={d.creator.photo}
+                      name={d.creator.name}
+                      size="sm"
+                      className={i === 0 ? "border-2 border-background" : "-ml-2 border-2 border-background"}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-muted">
+                  {all.length} active threads this week.
+                </p>
+              </>
+            )}
           </section>
         </aside>
       </div>
@@ -79,7 +79,25 @@ export default function DiscussionsPage() {
   );
 }
 
-function DiscussionList({ items }: { items: DiscussionWithCounts[] }) {
+function DiscussionList({
+  items,
+  isLoading,
+  error,
+}: {
+  items: DiscussionWithCounts[];
+  isLoading: boolean;
+  error: boolean;
+}) {
+  if (isLoading) return <DiscussionListSkeleton />;
+
+  if (error) {
+    return (
+      <p className="py-10 text-center text-sm text-muted">
+        Could not load discussions. Try again in a moment.
+      </p>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-muted">
