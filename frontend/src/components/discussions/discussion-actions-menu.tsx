@@ -30,17 +30,21 @@ interface Props {
   // For discussion kind only - prefills the edit dialog.
   title?: string;
   description?: string;
+  // moderator delete on someone else's content - hides the edit option
+  // (admins moderate, they don't rewrite people's posts)
+  asAdmin?: boolean;
 }
 
-// Shown only when the current user owns the discussion (or comment).
-// Discussion kind offers edit + delete; comment kind offers delete only
-// (backend has no PATCH /comments route).
+// Shown for the content owner OR an admin. Owner gets edit + delete on
+// a discussion (delete only on a comment, since there's no PATCH /comments).
+// Admin only ever gets delete - they're a mod, not a rewriter.
 export function DiscussionActionsMenu({
   kind = "discussion",
   discussionId,
   commentId,
   title = "",
   description = "",
+  asAdmin = false,
 }: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -84,7 +88,7 @@ export function DiscussionActionsMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {kind === "discussion" && (
+          {kind === "discussion" && !asAdmin && (
             <DropdownMenuItem
               // preventDefault stops Radix from auto-closing the menu before the
               // dialog opens. Without it the dialog flashes and dismisses.
@@ -108,7 +112,7 @@ export function DiscussionActionsMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {kind === "discussion" && (
+      {kind === "discussion" && !asAdmin && (
         <EditDiscussionDialog
           open={editOpen}
           onOpenChange={setEditOpen}

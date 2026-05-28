@@ -160,3 +160,15 @@ export interface BookReader {
   progress: Progress;
   user: Pick<User, "id" | "name" | "photo">;
 }
+
+// notes tab on a profile - each note carries the book it's about
+export interface CustomDataWithBook extends CustomData {
+  book: Book;
+}
+
+// profile header stats - 3 counts computed in parallel by the backend
+export interface UserProfileStats {
+  friends: number;
+  discussions: number;
+  publicNotes: number;
+}

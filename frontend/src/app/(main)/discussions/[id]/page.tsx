@@ -39,6 +39,7 @@ export default function DiscussionDetailPage() {
   const comments = d.comments;
   const commentCount = comments.length;
   const isOwnDiscussion = d.creatorId === me?.id;
+  const isAdmin = me?.role === "admin";
 
   return (
     <>
@@ -56,11 +57,12 @@ export default function DiscussionDetailPage() {
             <h1 className="min-w-0 wrap-break-word font-serif text-3xl font-medium leading-[1.1] text-ink sm:text-4xl md:text-5xl">
               {d.title}
             </h1>
-            {isOwnDiscussion && (
+            {(isOwnDiscussion || isAdmin) && (
               <DiscussionActionsMenu
                 discussionId={d.id}
                 title={d.title}
                 description={d.description}
+                asAdmin={!isOwnDiscussion}
               />
             )}
           </div>
@@ -129,11 +131,12 @@ export default function DiscussionDetailPage() {
                         <span className="text-muted">·</span>
                         <span className="text-muted">{formatRelative(c.createdAt)}</span>
                       </div>
-                      {isOwnComment && (
+                      {(isOwnComment || isAdmin) && (
                         <DiscussionActionsMenu
                           kind="comment"
                           discussionId={d.id}
                           commentId={c.id}
+                          asAdmin={!isOwnComment}
                         />
                       )}
                     </header>

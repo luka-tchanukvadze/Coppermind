@@ -163,7 +163,8 @@ model Comment {
   userId        String
   user          User       @relation(fields: [userId], references: [id])
   discussionId  String
-  discussion    Discussion @relation(fields: [discussionId], references: [id])
+  // cascade so deleting a discussion auto-cleans its comments
+  discussion    Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   activities    Activity[]
 
   @@index([discussionId, createdAt])
@@ -177,7 +178,8 @@ model Like {
   userId        String
   user          User       @relation(fields: [userId], references: [id])
   discussionId  String
-  discussion    Discussion @relation(fields: [discussionId], references: [id])
+  // cascade so deleting a discussion auto-cleans its likes
+  discussion    Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, discussionId])
   @@index([discussionId])

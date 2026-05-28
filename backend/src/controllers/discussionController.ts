@@ -111,10 +111,12 @@ export const updateDiscussion = catchAsync(
 export const deleteDiscussion = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
+    const isAdmin = req.user!.role === "admin";
     const id = req.params.id as string;
 
+    // admin bypasses the creator check - moderation. 404 if id wrong either way
     const discussion = await prisma.discussion.deleteMany({
-      where: { id, creatorId: userId },
+      where: isAdmin ? { id } : { id, creatorId: userId },
     });
 
     if (discussion.count === 0)
@@ -153,11 +155,15 @@ export const addComment = catchAsync(
 export const deleteComment = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
+    const isAdmin = req.user!.role === "admin";
     const id = req.params.id as string;
     const commentId = req.params.commentId as string;
 
+    // admin can delete any comment for moderation - same pattern as deleteDiscussion
     const comment = await prisma.comment.deleteMany({
-      where: { discussionId: id, userId, id: commentId },
+      where: isAdmin
+        ? { discussionId: id, id: commentId }
+        : { discussionId: id, userId, id: commentId },
     });
 
     if (comment.count === 0)

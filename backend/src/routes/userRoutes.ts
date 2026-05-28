@@ -23,6 +23,12 @@ router.delete("/deleteMe", userController.deleteMe);
 
 router.route("/").get(userController.getAllUsers);
 
-router.route("/:id").get(userController.getUser);
+router
+  .route("/:id")
+  .get(userController.getUser)
+  .delete(authController.restrictTo("admin"), userController.deleteUserById);
+router.route("/:id/profile-stats").get(userController.getUserProfileStats);
+router.route("/:id/discussions").get(userController.getUserDiscussions);
+router.route("/:id/notes").get(userController.getUserPublicNotes);
 
 export default router;

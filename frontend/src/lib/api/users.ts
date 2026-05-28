@@ -1,7 +1,12 @@
 // getMe, getUser, updateProfile, updatePassword, deleteAccount
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { User } from "@/types/schema";
+import type {
+  CustomDataWithBook,
+  DiscussionWithCounts,
+  User,
+  UserProfileStats,
+} from "@/types/schema";
 
 type MeResponse = { status: string; data: { user: User } };
 
@@ -89,6 +94,68 @@ function useAllUsers() {
   });
 }
 
+// profile-scoped fetches - drive the header counters + the discussions/notes tabs
+
+type ProfileStatsResponse = { data: { stats: UserProfileStats } };
+// raw row shape from backend - counts come nested
+type UserDiscussionRow = Omit<DiscussionWithCounts, "commentCount" | "likeCount"> & {
+  _count: { likes: number; comments: number };
+};
+type UserDiscussionsApiResponse = { data: { discussions: UserDiscussionRow[] } };
+type UserNotesResponse = { data: { notes: CustomDataWithBook[] } };
+
+async function fetchUserProfileStats(id: string): Promise<UserProfileStats> {
+  const res = await apiClient.get<ProfileStatsResponse>(
+    `/users/${id}/profile-stats`,
+  );
+  return res.data.stats;
+}
+
+async function fetchUserDiscussions(
+  id: string,
+): Promise<DiscussionWithCounts[]> {
+  const res = await apiClient.get<UserDiscussionsApiResponse>(
+    `/users/${id}/discussions`,
+  );
+  // flatten _count to the commentCount/likeCount the UI types expect
+  return res.data.discussions.map((d) => ({
+    ...d,
+    commentCount: d._count.comments,
+    likeCount: d._count.likes,
+  }));
+}
+
+async function fetchUserPublicNotes(
+  id: string,
+): Promise<CustomDataWithBook[]> {
+  const res = await apiClient.get<UserNotesResponse>(`/users/${id}/notes`);
+  return res.data.notes;
+}
+
+function useUserProfileStats(id: string) {
+  return useQuery({
+    queryKey: ["user-profile-stats", id],
+    queryFn: () => fetchUserProfileStats(id),
+    enabled: !!id,
+  });
+}
+
+function useUserDiscussions(id: string) {
+  return useQuery({
+    queryKey: ["user-discussions", id],
+    queryFn: () => fetchUserDiscussions(id),
+    enabled: !!id,
+  });
+}
+
+function useUserPublicNotes(id: string) {
+  return useQuery({
+    queryKey: ["user-notes", id],
+    queryFn: () => fetchUserPublicNotes(id),
+    enabled: !!id,
+  });
+}
+
 export {
   useMe,
   useUpdateMe,
@@ -96,4 +163,7 @@ export {
   useDeleteMe,
   useUser,
   useAllUsers,
+  useUserProfileStats,
+  useUserDiscussions,
+  useUserPublicNotes,
 };
