@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatRelative } from "@/lib/format";
 import type { FeedItem } from "@/types/schema";
 
-function verbFor(kind: FeedItem["kind"]): string {
-  switch (kind) {
+function verbFor(item: FeedItem): string {
+  switch (item.kind) {
     case "started_reading":
       return "started reading";
     case "finished_book":
@@ -15,7 +15,8 @@ function verbFor(kind: FeedItem["kind"]): string {
     case "wants_to_read":
       return "wants to read";
     case "new_discussion":
-      return "started a discussion";
+      // add "on" only when the discussion is tied to a book - reads naturally either way
+      return item.book ? "started a discussion on" : "started a discussion";
     case "discussion_comment":
       return "replied to";
     case "public_note":
@@ -24,7 +25,7 @@ function verbFor(kind: FeedItem["kind"]): string {
 }
 
 export function FeedCard({ item }: { item: FeedItem }) {
-  const verb = verbFor(item.kind);
+  const verb = verbFor(item);
 
   return (
     <article className="rounded-md border bg-surface p-6 transition-colors hover:border-border-strong">

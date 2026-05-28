@@ -4,6 +4,7 @@ import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Share2 } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
+import { BookCover } from "@/components/shared/book-cover";
 import { Button } from "@/components/ui/button";
 import { LikeButton } from "@/components/discussions/like-button";
 import { DiscussionActionsMenu } from "@/components/discussions/discussion-actions-menu";
@@ -70,6 +71,24 @@ export default function DiscussionDetailPage() {
               <div className="text-xs">{formatRelative(d.createdAt)}</div>
             </div>
           </div>
+
+          {d.book && (
+            <Link
+              href={`/books/${d.book.id}`}
+              className="mt-6 flex items-center gap-3 rounded-md border bg-surface p-3 transition-colors hover:border-border-strong"
+            >
+              <BookCover coverImage={d.book.coverImage} title={d.book.title} size="sm" />
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-widest text-muted">
+                  About this book
+                </div>
+                <div className="mt-0.5 truncate font-serif text-base font-medium text-ink">
+                  {d.book.title}
+                </div>
+                <div className="truncate text-xs italic text-muted">{d.book.author}</div>
+              </div>
+            </Link>
+          )}
         </header>
 
         <div className="space-y-4 wrap-break-word text-[16px] leading-relaxed text-ink/90 sm:text-[17px]">

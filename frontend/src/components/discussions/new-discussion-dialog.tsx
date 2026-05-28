@@ -16,24 +16,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { BookPicker } from "./book-picker";
 import { useCreateDiscussion } from "@/lib/api/discussions";
+import type { Book } from "@/types/schema";
 
 interface Props {
   // Optional custom trigger - lets the dialog be triggered from e.g. a "Start discussion"
   // button on the book detail page. Defaults to a "+ New discussion" primary button.
   trigger?: ReactNode;
+  // when launched from a book detail page, the book is preselected (and not removable
+  // via the picker chip - that would be confusing in context)
+  preselectedBook?: Book;
 }
 
-// Backend: POST /discussions expects { title, description }.
-export function NewDiscussionDialog({ trigger }: Props = {}) {
+// Backend: POST /discussions expects { title, description, bookId? }
+export function NewDiscussionDialog({ trigger, preselectedBook }: Props = {}) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [book, setBook] = useState<Book | null>(preselectedBook ?? null);
   const createDiscussion = useCreateDiscussion();
 
   const reset = () => {
     setTitle("");
     setDescription("");
+    setBook(preselectedBook ?? null);
   };
 
   const handlePost = () => {
@@ -42,7 +49,11 @@ export function NewDiscussionDialog({ trigger }: Props = {}) {
       return;
     }
     createDiscussion.mutate(
-      { title: title.trim(), description: description.trim() },
+      {
+        title: title.trim(),
+        description: description.trim(),
+        bookId: book?.id ?? null,
+      },
       {
         onSuccess: () => {
           setOpen(false);
@@ -72,7 +83,9 @@ export function NewDiscussionDialog({ trigger }: Props = {}) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Start a discussion</DialogTitle>
-          <DialogDescription>Ask a question, share a hot take, kick off a thread.</DialogDescription>
+          <DialogDescription>
+            Ask a question, share a hot take, kick off a thread.
+          </DialogDescription>
         </DialogHeader>
 
         <form
@@ -93,6 +106,10 @@ export function NewDiscussionDialog({ trigger }: Props = {}) {
             />
           </div>
           <div className="space-y-1.5">
+            <Label>About a book? (optional)</Label>
+            <BookPicker value={book} onChange={setBook} />
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
@@ -105,7 +122,9 @@ export function NewDiscussionDialog({ trigger }: Props = {}) {
         </form>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
           <Button onClick={handlePost} disabled={createDiscussion.isPending}>
             {createDiscussion.isPending ? "Posting..." : "Post discussion"}
           </Button>

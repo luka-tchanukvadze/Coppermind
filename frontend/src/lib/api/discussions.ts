@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import type {
   Discussion,
+  DiscussionBook,
   DiscussionWithCounts,
   CommentWithUser,
   User,
@@ -13,10 +14,12 @@ type Creator = Pick<User, "id" | "name" | "photo">;
 // raw backend shapes (counts come nested under _count)
 type DiscussionListApi = Discussion & {
   creator: Creator;
+  book: DiscussionBook | null;
   _count: { likes: number; comments: number };
 };
 type DiscussionDetailApi = Discussion & {
   creator: Creator;
+  book: DiscussionBook | null;
   comments: CommentWithUser[];
   _count: { likes: number };
   likedByMe: boolean;
@@ -28,12 +31,17 @@ type DiscussionResponse = { data: { discussion: DiscussionDetailApi } };
 // detail view model: flat likeCount + embedded comments + likedByMe for the heart state
 export type DiscussionDetail = Discussion & {
   creator: Creator;
+  book?: DiscussionBook | null;
   comments: CommentWithUser[];
   likeCount: number;
   likedByMe: boolean;
 };
 
-type CreateDiscussionInput = { title: string; description: string };
+type CreateDiscussionInput = {
+  title: string;
+  description: string;
+  bookId?: string | null;
+};
 type UpdateDiscussionInput = { id: string; title: string; description: string };
 
 // flatten _count -> the commentCount/likeCount the UI types expect
@@ -45,7 +53,9 @@ function toListItem(d: DiscussionListApi): DiscussionWithCounts {
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
     creatorId: d.creatorId,
+    bookId: d.bookId ?? null,
     creator: d.creator,
+    book: d.book,
     commentCount: d._count.comments,
     likeCount: d._count.likes,
   };
@@ -66,7 +76,9 @@ async function fetchDiscussion(id: string): Promise<DiscussionDetail> {
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
     creatorId: d.creatorId,
+    bookId: d.bookId ?? null,
     creator: d.creator,
+    book: d.book,
     comments: d.comments,
     likeCount: d._count.likes,
     likedByMe: d.likedByMe,

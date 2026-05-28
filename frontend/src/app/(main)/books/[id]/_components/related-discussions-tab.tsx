@@ -5,7 +5,7 @@ export function RelatedDiscussionsTab({ discussions }: { discussions: Discussion
   if (!discussions.length)
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        No related discussions yet.
+        No discussions about this book yet. Be the first to start one.
       </div>
     );
 

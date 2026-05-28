@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { UserPic } from "@/components/shared/user-pic";
-import type { User } from "@/types/schema";
+import type { BookReader, Progress } from "@/types/schema";
 
-export interface ReaderEntry {
-  user: User;
-  status: string;
+function statusLabel(progress: Progress): string {
+  switch (progress) {
+    case "READING":
+      return "Currently reading";
+    case "READ":
+      return "Finished";
+    case "WANT_TO_READ":
+      return "Want to read";
+  }
 }
 
-export function ReadersTab({ readers }: { readers: ReaderEntry[] }) {
+export function ReadersTab({ readers }: { readers: BookReader[] }) {
   if (!readers.length)
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
@@ -17,7 +23,7 @@ export function ReadersTab({ readers }: { readers: ReaderEntry[] }) {
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-      {readers.map(({ user, status }) => (
+      {readers.map(({ user, progress }) => (
         <Link
           key={user.id}
           href={`/profile/${user.id}`}
@@ -26,7 +32,7 @@ export function ReadersTab({ readers }: { readers: ReaderEntry[] }) {
           <UserPic photo={user.photo} name={user.name} size="sm" />
           <div className="min-w-0">
             <div className="truncate text-sm font-medium text-ink">{user.name}</div>
-            <div className="text-xs text-muted">{status}</div>
+            <div className="text-xs text-muted">{statusLabel(progress)}</div>
           </div>
         </Link>
       ))}

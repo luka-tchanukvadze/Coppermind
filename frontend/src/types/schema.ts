@@ -86,7 +86,11 @@ export interface Discussion {
   createdAt: string;
   updatedAt: string;
   creatorId: string;
+  bookId?: string | null;
 }
+
+// shape used everywhere a discussion's book is displayed - keep this in one place
+export type DiscussionBook = Pick<Book, "id" | "title" | "author" | "coverImage">;
 
 export interface Comment {
   id: string;
@@ -138,10 +142,21 @@ export interface ConversationPreview {
 
 export interface DiscussionWithCounts extends Discussion {
   creator: Pick<User, "id" | "name" | "photo">;
+  book?: DiscussionBook | null;
   commentCount: number;
   likeCount: number;
 }
 
 export interface CommentWithUser extends Comment {
+  user: Pick<User, "id" | "name" | "photo">;
+}
+
+export interface CustomDataWithUser extends CustomData {
+  user: Pick<User, "id" | "name" | "photo">;
+}
+
+// readers tab on book detail - what GET /books/:id/readers returns per row
+export interface BookReader {
+  progress: Progress;
   user: Pick<User, "id" | "name" | "photo">;
 }

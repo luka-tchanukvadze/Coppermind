@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { Book, BookSearchResult } from "@/types/schema";
+import type {
+  Book,
+  BookReader,
+  BookSearchResult,
+  CustomDataWithUser,
+  DiscussionWithCounts,
+} from "@/types/schema";
 import { useDebouncedValue } from "../hooks/use-debounced-value";
 
 // wire shape (what backend sends)
@@ -101,4 +107,70 @@ function useSearchBooks(query: string) {
   });
 }
 
-export { useBooks, useBook, useSearchBooks };
+// book detail tabs - readers / public notes / related discussions
+type BookReadersResponse = { data: { readers: BookReader[] } };
+type BookNotesResponse = { data: { notes: CustomDataWithUser[] } };
+// list shape comes through with flat counts already - see backend bookController
+type BookDiscussionsRow = Omit<DiscussionWithCounts, "commentCount" | "likeCount"> & {
+  _count: { likes: number; comments: number };
+};
+type BookDiscussionsResponse = { data: { discussions: BookDiscussionsRow[] } };
+
+async function fetchBookReaders(bookId: string): Promise<BookReader[]> {
+  const res = await apiClient.get<BookReadersResponse>(`/books/${bookId}/readers`);
+  return res.data.readers;
+}
+
+async function fetchBookPublicNotes(
+  bookId: string,
+): Promise<CustomDataWithUser[]> {
+  const res = await apiClient.get<BookNotesResponse>(`/books/${bookId}/notes`);
+  return res.data.notes;
+}
+
+async function fetchBookDiscussions(
+  bookId: string,
+): Promise<DiscussionWithCounts[]> {
+  const res = await apiClient.get<BookDiscussionsResponse>(
+    `/books/${bookId}/discussions`,
+  );
+  // flatten _count the way the UI types expect
+  return res.data.discussions.map((d) => ({
+    ...d,
+    commentCount: d._count.comments,
+    likeCount: d._count.likes,
+  }));
+}
+
+function useBookReaders(bookId: string) {
+  return useQuery({
+    queryKey: ["book-readers", bookId],
+    queryFn: () => fetchBookReaders(bookId),
+    enabled: !!bookId,
+  });
+}
+
+function useBookPublicNotes(bookId: string) {
+  return useQuery({
+    queryKey: ["book-notes", bookId],
+    queryFn: () => fetchBookPublicNotes(bookId),
+    enabled: !!bookId,
+  });
+}
+
+function useBookDiscussions(bookId: string) {
+  return useQuery({
+    queryKey: ["book-discussions", bookId],
+    queryFn: () => fetchBookDiscussions(bookId),
+    enabled: !!bookId,
+  });
+}
+
+export {
+  useBooks,
+  useBook,
+  useSearchBooks,
+  useBookReaders,
+  useBookPublicNotes,
+  useBookDiscussions,
+};
