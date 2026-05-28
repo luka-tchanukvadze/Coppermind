@@ -26,13 +26,17 @@ export const getMe = (req: Request, res: Response, next: NextFunction) => {
 export const getUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id as string;
+    // email is personal data - only return it to the user themselves or to admins
+    // (admins need it for moderation). everyone else gets the public-safe shape
+    const canSeeEmail =
+      id === req.user!.id || req.user!.role === "admin";
 
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
         name: true,
-        email: true,
+        email: canSeeEmail,
         photo: true,
         role: true,
         active: true,
@@ -125,10 +129,11 @@ export const getAllUsers = catchAsync(
     const users = await prisma.user.findMany({
       // admins are moderation accounts - keep them out of friend search
       where: { active: true, role: { not: "admin" } },
+      // no email here - this is the public discovery list, anyone with an account
+      // can call it. don't hand out everyone's address
       select: {
         id: true,
         name: true,
-        email: true,
         photo: true,
         role: true,
         active: true,

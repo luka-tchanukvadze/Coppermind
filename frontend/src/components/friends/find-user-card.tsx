@@ -3,6 +3,7 @@
 import { UserPic } from "@/components/shared/user-pic";
 import { AddFriendButton } from "./add-friend-button";
 import { useMutualFriends } from "@/lib/api/friends";
+import { orderFromPhoto } from "@/lib/avatars";
 import type { User } from "@/types/schema";
 
 /* TODO N+1 - useMutualFriends fires per Find card.
@@ -10,6 +11,8 @@ import type { User } from "@/types/schema";
 export function FindUserCard({ user }: { user: User }) {
   const { data: mutuals = [] } = useMutualFriends(user.id);
   const mutual = mutuals.length;
+
+  const order = orderFromPhoto(user.photo);
 
   return (
     <div className="flex flex-col items-start gap-3 rounded-md border bg-surface p-5">
@@ -20,7 +23,7 @@ export function FindUserCard({ user }: { user: User }) {
           <div className="truncate text-xs text-muted">
             {mutual > 0
               ? `${mutual} mutual ${mutual === 1 ? "friend" : "friends"}`
-              : user.email}
+              : (order ?? "Reader")}
           </div>
         </div>
       </div>

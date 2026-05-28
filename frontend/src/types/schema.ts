@@ -8,7 +8,9 @@ export type FriendStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 export interface User {
   id: string;
   name: string;
-  email: string;
+  // only present for the logged-in user themselves (via /me) or admins.
+  // omitted when fetching another user via /users/:id, and never in /users listings
+  email?: string;
   photo: string;
   role: Role;
   active: boolean;

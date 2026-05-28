@@ -3,9 +3,14 @@ import { Pencil } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { orderFromPhoto } from "@/lib/avatars";
 import type { User } from "@/types/schema";
 
 export function ProfileBanner({ user, isMe }: { user: User; isMe: boolean }) {
+  // email only comes back for self/admin views. for everyone else, fall back
+  // to their Knights Radiant order so the row isn't empty
+  const subtitle = user.email ?? orderFromPhoto(user.photo);
+
   return (
     <>
       {/* Banner breaks out of the (main) layout padding so it goes edge-to-edge.
@@ -30,7 +35,9 @@ export function ProfileBanner({ user, isMe }: { user: User; isMe: boolean }) {
                 </Badge>
               )}
             </div>
-            <p className="mt-1 truncate text-sm text-muted">{user.email}</p>
+            {subtitle && (
+              <p className="mt-1 truncate text-sm text-muted">{subtitle}</p>
+            )}
           </div>
         </div>
         {isMe && (
