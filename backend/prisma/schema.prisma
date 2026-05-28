@@ -43,6 +43,7 @@ model Book {
 
   userBooks     UserBook[]
   activities    Activity[]
+  discussions   Discussion[]
 
   @@map("books")
 }
@@ -143,10 +144,14 @@ model Discussion {
 
   creatorId   String
   creator     User      @relation(fields: [creatorId], references: [id])
+  // optional: existing discussions stay null, new ones can be tied to a book
+  bookId      String?
+  book        Book?     @relation(fields: [bookId], references: [id])
   comments    Comment[]
   likes       Like[]
   activities  Activity[]
 
+  @@index([bookId])
   @@map("discussions")
 }
 

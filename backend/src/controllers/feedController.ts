@@ -66,6 +66,15 @@ export const getFeed = catchAsync(
               id: true,
               title: true,
               description: true,
+              // pulled through so feed cards can show what book the thread is about
+              book: {
+                select: {
+                  id: true,
+                  title: true,
+                  author: true,
+                  coverImage: true,
+                },
+              },
               // _count returns { comments: N, likes: N } without loading the rows
               _count: { select: { comments: true, likes: true } },
             },
@@ -147,11 +156,14 @@ export const getFeed = catchAsync(
         case "FINISHED_BOOK":
           return { ...base, book: a.book ?? undefined };
 
-        // new discussion - flatten _count into the flat fields the frontend uses
+        // new discussion - flatten _count into the flat fields the frontend uses.
+        // surface the discussion's book at the top level so the header line reads
+        // "X started a discussion on BookTitle by Author"
         case "NEW_DISCUSSION":
           if (!a.discussion) return base;
           return {
             ...base,
+            book: a.discussion.book ?? undefined,
             discussion: {
               id: a.discussion.id,
               title: a.discussion.title,

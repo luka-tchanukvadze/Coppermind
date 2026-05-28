@@ -16,5 +16,8 @@ router
 router.route("/search").get(bookController.searchBooks);
 
 router.route("/:id").get(bookController.getBook);
+router.route("/:id/readers").get(bookController.getBookReaders);
+router.route("/:id/notes").get(bookController.getBookPublicNotes);
+router.route("/:id/discussions").get(bookController.getBookDiscussions);
 
 export default router;

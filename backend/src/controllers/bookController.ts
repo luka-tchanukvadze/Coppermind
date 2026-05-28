@@ -86,6 +86,72 @@ export const getBook = catchAsync(
   },
 );
 
+// readers tab on the book detail page. only public shelves count, since a private
+// shelf entry means the user opted out of being shown here
+export const getBookReaders = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+
+    const rows = await prisma.userBook.findMany({
+      where: { bookId: id, isPrivate: false },
+      select: {
+        progress: true,
+        user: { select: { id: true, name: true, photo: true } },
+      },
+      orderBy: { progressUpdatedAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: rows.length,
+      data: { readers: rows },
+    });
+  },
+);
+
+// public notes tab on the book detail page. only non-private notes, joined
+// through userBook so we can scope to this specific book
+export const getBookPublicNotes = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+
+    const notes = await prisma.customData.findMany({
+      where: { isPrivate: false, userBook: { bookId: id } },
+      include: { user: { select: { id: true, name: true, photo: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: notes.length,
+      data: { notes },
+    });
+  },
+);
+
+// related-discussions tab on the book detail page. mirrors getDiscussions
+// shape (creator + counts) but filtered to this book's bookId
+export const getBookDiscussions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id as string;
+
+    const discussions = await prisma.discussion.findMany({
+      where: { bookId: id },
+      include: {
+        creator: { select: { id: true, name: true, photo: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: discussions.length,
+      data: { discussions },
+    });
+  },
+);
+
 // searchBooks: google primary, OL fallback. Results aren't in my DB - addUserBook upserts on add
 export const searchBooks = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {

@@ -8,10 +8,11 @@ import { ActivityKind } from "../../generated/prisma/index.js";
 export const createDiscussion = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
-    const { title, description } = req.body;
+    // bookId is optional - old discussions stay book-less
+    const { title, description, bookId } = req.body;
 
     const discussion = await prisma.discussion.create({
-      data: { title, description, creatorId: userId },
+      data: { title, description, creatorId: userId, bookId: bookId ?? null },
     });
 
     void createActivity({
@@ -34,6 +35,9 @@ export const getDiscussions = catchAsync(
     const discussions = await prisma.discussion.findMany({
       include: {
         creator: { select: { id: true, name: true, photo: true } },
+        book: {
+          select: { id: true, title: true, author: true, coverImage: true },
+        },
         _count: { select: { likes: true, comments: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -58,6 +62,9 @@ export const getDiscussion = catchAsync(
       where: { id },
       include: {
         creator: { select: { id: true, name: true, photo: true } },
+        book: {
+          select: { id: true, title: true, author: true, coverImage: true },
+        },
         comments: {
           include: { user: { select: { id: true, name: true, photo: true } } },
           orderBy: { createdAt: "asc" },
