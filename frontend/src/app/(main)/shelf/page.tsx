@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,10 +14,39 @@ import {
 import { useUserBooks } from "@/lib/api/user-books";
 import { ShelfList } from "@/components/shelf/shelf-list";
 import { ShelfListSkeleton } from "@/components/shelf/shelf-list-skeleton";
+import type { UserBookWithBook } from "@/types/schema";
+
+type SortKey = "added" | "updated" | "title" | "author";
+
+// each sort runs on the already-fetched shelf - cheap, no extra fetch.
+// dates are ISO strings so localeCompare gives the right order without
+// parsing to Date. nulls land at the bottom for "updated"
+function sortBooks(books: UserBookWithBook[], key: SortKey): UserBookWithBook[] {
+  const copy = [...books];
+  switch (key) {
+    case "added":
+      return copy.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    case "updated":
+      return copy.sort((a, b) =>
+        (b.progressUpdatedAt ?? "").localeCompare(a.progressUpdatedAt ?? ""),
+      );
+    case "title":
+      return copy.sort((a, b) => a.book.title.localeCompare(b.book.title));
+    case "author":
+      return copy.sort((a, b) => a.book.author.localeCompare(b.book.author));
+  }
+}
 
 export default function ShelfPage() {
   const { data: shelf, isLoading, error } = useUserBooks(1, 100);
-  const books = shelf ?? [];
+  const [sortKey, setSortKey] = useState<SortKey>("added");
+
+  const sorted = useMemo(
+    () => sortBooks(shelf ?? [], sortKey),
+    [shelf, sortKey],
+  );
+
+  const books = sorted;
   const byStatus = {
     all: books,
     want: books.filter((b) => b.progress === "WANT_TO_READ"),
@@ -52,7 +82,7 @@ export default function ShelfPage() {
         title="My shelf"
         subtitle={`${books.length} books on your shelf.`}
         actions={
-          <Select defaultValue="added">
+          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
             <SelectTrigger className="w-56">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>

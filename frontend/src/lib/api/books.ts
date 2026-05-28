@@ -49,10 +49,11 @@ type SearchResult = {
 async function fetchAllBooks(
   page: number,
   limit: number,
+  genre?: string,
 ): Promise<BooksResult> {
-  const res = await apiClient.get<BooksResponse>(
-    `/books?page=${page}&limit=${limit}`,
-  );
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (genre) params.set("genre", genre);
+  const res = await apiClient.get<BooksResponse>(`/books?${params.toString()}`);
   // flatten envelope -> result
   return {
     total: res.total,
@@ -60,6 +61,15 @@ async function fetchAllBooks(
     totalPages: res.totalPages,
     books: res.data.books,
   };
+}
+
+type BookGenresResponse = {
+  data: { total: number; genres: { genre: string; count: number }[] };
+};
+
+async function fetchBookGenres() {
+  const res = await apiClient.get<BookGenresResponse>("/books/genres");
+  return res.data;
 }
 
 async function fetchSingleBook(id: string): Promise<Book> {
@@ -80,11 +90,18 @@ async function fetchSearchBooks(query: string): Promise<SearchResult> {
 
 // react query hooks
 
-// page in queryKey -> each page gets its own cache slot
-function useBooks(page: number = 1, limit: number = 20) {
+// page + genre in queryKey -> each filter+page combo gets its own cache slot
+function useBooks(page: number = 1, limit: number = 20, genre?: string) {
   return useQuery({
-    queryKey: ["books", page, limit],
-    queryFn: () => fetchAllBooks(page, limit),
+    queryKey: ["books", page, limit, genre ?? null],
+    queryFn: () => fetchAllBooks(page, limit, genre),
+  });
+}
+
+function useBookGenres() {
+  return useQuery({
+    queryKey: ["book-genres"],
+    queryFn: fetchBookGenres,
   });
 }
 
@@ -168,6 +185,7 @@ function useBookDiscussions(bookId: string) {
 
 export {
   useBooks,
+  useBookGenres,
   useBook,
   useSearchBooks,
   useBookReaders,

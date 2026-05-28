@@ -1,51 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useBooks } from "@/lib/api/books";
 import { BookCover } from "@/components/shared/book-cover";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import type { Book } from "@/types/schema";
 
 interface BookGridProps {
+  books: Book[];
   page: number;
-  limit?: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
+  // shown when the filtered set is empty so the page can explain WHY
+  // (no books at all vs. nothing in this genre)
+  emptyMessage?: string;
 }
 
-export function BookGrid({ page, limit = 20, onPageChange }: BookGridProps) {
-  const { data, isLoading, error } = useBooks(page, limit);
-
-  // loading - skeletons mirror the data grid so layout doesn't shift on swap
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {Array.from({ length: limit }).map((_, i) => (
-          <div key={i}>
-            <Skeleton className="aspect-2/3 w-full" />
-            <Skeleton className="mt-3 h-4 w-3/4" />
-            <Skeleton className="mt-2 h-3 w-1/2" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // error - react-query already retried 5xx twice, so by here the user is genuinely stuck
-  if (error) {
+export function BookGrid({
+  books,
+  page,
+  totalPages,
+  onPageChange,
+  emptyMessage = "No books to show.",
+}: BookGridProps) {
+  if (books.length === 0) {
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Could not load books. Try again in a moment.
-      </div>
-    );
-  }
-
-  // empty - covers no-books-yet and out-of-range page in one branch
-  if (!data || data.books.length === 0) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        {page > 1
-          ? "No more books on this page."
-          : "No books in the catalog yet."}
+        {emptyMessage}
       </div>
     );
   }
@@ -53,7 +33,7 @@ export function BookGrid({ page, limit = 20, onPageChange }: BookGridProps) {
   return (
     <>
       <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {data.books.map((book) => (
+        {books.map((book) => (
           <Link
             key={book.id}
             href={`/books/${book.id}`}
@@ -85,34 +65,31 @@ export function BookGrid({ page, limit = 20, onPageChange }: BookGridProps) {
         ))}
       </div>
 
-      <div className="mt-12 flex items-center justify-between text-sm text-muted">
-        <button
-          type="button"
-          className="hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={page <= 1}
-          onClick={() => {
-            onPageChange(page - 1);
-          }}
-        >
-          ← Previous
-        </button>
+      {totalPages > 1 && (
+        <div className="mt-12 flex items-center justify-between text-sm text-muted">
+          <button
+            type="button"
+            className="hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+          >
+            ← Previous
+          </button>
 
-        <div>
-          Page <span className="font-medium text-ink">{data.page}</span> of{" "}
-          {data.totalPages}
+          <div>
+            Page <span className="font-medium text-ink">{page}</span> of {totalPages}
+          </div>
+
+          <button
+            type="button"
+            className="hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+          >
+            Next →
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={page >= data.totalPages}
-          onClick={() => {
-            onPageChange(page + 1);
-          }}
-        >
-          Next →
-        </button>
-      </div>
+      )}
     </>
   );
 }

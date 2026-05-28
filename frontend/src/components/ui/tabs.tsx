@@ -13,10 +13,11 @@ export const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      // overflow-x-auto lets the strip scroll on mobile when there are many tabs
-      // (shelf has 4, friends has 3 with counts, etc).
-      "flex items-center gap-5 overflow-x-auto border-b border-border sm:gap-6",
-      // Hide the scrollbar visually - the strip should still scroll, just no chrome.
+      // overflow-x-auto lets the strip scroll on mobile when there are many tabs.
+      // pair with overflow-y-hidden so browsers don't coerce y to auto and show
+      // a stray vertical scrollbar next to the tabs
+      "flex items-center gap-5 overflow-x-auto overflow-y-hidden border-b border-border sm:gap-6",
+      // hide the horizontal scrollbar visually - the strip should still scroll, just no chrome
       "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
       className,
     )}

@@ -14,6 +14,7 @@ router
   .get(bookController.getAllBooks);
 
 router.route("/search").get(bookController.searchBooks);
+router.route("/genres").get(bookController.getGenres);
 
 router.route("/:id").get(bookController.getBook);
 router.route("/:id/readers").get(bookController.getBookReaders);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
@@ -17,6 +18,14 @@ interface ConversationListPaneProps {
 export function ConversationListPane({ activeConvoId, hideOnMobile }: ConversationListPaneProps) {
   const { data: convos = [], isLoading } = useConversations();
   const { data: me } = useMe();
+  const [search, setSearch] = useState("");
+
+  // client-side filter on the already-loaded list. matches the other person's
+  // name - cheap and what users expect from a sidebar search
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? convos.filter((c) => c.participants[0]?.user.name.toLowerCase().includes(q))
+    : convos;
 
   return (
     <aside
@@ -29,7 +38,12 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
         <h2 className="font-serif text-xl font-medium leading-tight text-ink">Conversations</h2>
         <div className="relative mt-3">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
-          <Input className="h-9 pl-9 text-sm" placeholder="Search..." />
+          <Input
+            className="h-9 pl-9 text-sm"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </header>
 
@@ -43,9 +57,13 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
           </Link>{" "}
           to send the first message.
         </p>
+      ) : filtered.length === 0 ? (
+        <p className="px-5 py-4 text-sm text-muted">
+          No conversations matching &ldquo;{search}&rdquo;.
+        </p>
       ) : (
         <ul className="flex-1 overflow-y-auto">
-          {convos.map((c) => {
+          {filtered.map((c) => {
             const other = c.participants[0]?.user;
             const lastMessage = c.messages[0];
             const isMine = lastMessage?.userId === me?.id;

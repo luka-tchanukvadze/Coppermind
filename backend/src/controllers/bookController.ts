@@ -11,6 +11,24 @@ import type { BookSearchResult } from "../services/types.js";
 // one Redis key for the whole public list - simple to invalidate on writes. Fine until I need to scale
 const BOOKS_CACHE_KEY = "all_books";
 
+// shared cache-or-fetch path for any endpoint that needs the full catalog
+// (list, genre filter, genre aggregation). single source of truth for caching
+async function loadCatalog() {
+  /* TODO: i need to add a SETNX lock if cache stampede ever becomes a real problem
+     (many users simultaneously hitting this the moment cache expires) */
+  const cached = await redisClient.get(BOOKS_CACHE_KEY);
+  if (cached) {
+    return {
+      books: JSON.parse(cached) as Awaited<ReturnType<typeof prisma.book.findMany>>,
+      source: "cache" as const,
+    };
+  }
+  const books = await prisma.book.findMany({ orderBy: { title: "asc" } });
+  // cache 1 week (604800s)
+  await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(books), { EX: 604800 });
+  return { books, source: "database" as const };
+}
+
 // addBook: admin-only. Seeds new entries into the global catalog.
 export const addBook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -35,34 +53,46 @@ export const getAllBooks = catchAsync(
     // clamp inputs so a bad ?page=-5 or ?limit=99999 can't blow up the response
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const genre = (req.query.genre as string | undefined)?.trim();
     const skip = (page - 1) * limit;
 
-    let books;
-    let source: "cache" | "database";
-
-    /* TODO: i need to add a SETNX lock if cache stampede ever becomes a real problem
-       (many users simultaneously hitting this route the moment cache expires) */
-    const cached = await redisClient.get(BOOKS_CACHE_KEY);
-    if (cached) {
-      books = JSON.parse(cached);
-      source = "cache";
-    } else {
-      books = await prisma.book.findMany({ orderBy: { title: "asc" } });
-      // cache 1 week (604800s)
-      await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(books), {
-        EX: 604800,
-      });
-      source = "database";
-    }
+    const { books: all, source } = await loadCatalog();
+    // genre filter is applied in JS off the cached list - cheap at our scale,
+    // and means the cache stays a single full snapshot (no per-genre keys)
+    const filtered = genre
+      ? all.filter((b) => b.genres.includes(genre))
+      : all;
 
     res.status(200).json({
       status: "success",
       source,
-      total: books.length,
+      total: filtered.length,
       page,
-      totalPages: Math.ceil(books.length / limit),
-      results: Math.min(limit, Math.max(0, books.length - skip)),
-      data: { books: books.slice(skip, skip + limit) },
+      totalPages: Math.ceil(filtered.length / limit),
+      results: Math.min(limit, Math.max(0, filtered.length - skip)),
+      data: { books: filtered.slice(skip, skip + limit) },
+    });
+  },
+);
+
+// genre tags + counts for the chip row on /books. total is the unique book
+// count (NOT the sum of per-genre counts - books often have multiple genres)
+export const getGenres = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { books } = await loadCatalog();
+    const counts = new Map<string, number>();
+    for (const b of books) {
+      for (const g of b.genres) {
+        counts.set(g, (counts.get(g) ?? 0) + 1);
+      }
+    }
+    const genres = Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([genre, count]) => ({ genre, count }));
+
+    res.status(200).json({
+      status: "success",
+      data: { total: books.length, genres },
     });
   },
 );
