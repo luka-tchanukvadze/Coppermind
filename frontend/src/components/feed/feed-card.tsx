@@ -67,16 +67,25 @@ export function FeedCard({ item }: { item: FeedItem }) {
       )}
 
       {item.kind === "new_discussion" && item.discussion && (
-        <div className="mt-4 rounded-md border border-dashed bg-muted-bg/40 p-4">
-          <p className="line-clamp-2 text-sm text-ink">{item.discussion.description}</p>
-          <div className="mt-3 flex items-center gap-4 text-xs text-muted">
-            <span className="inline-flex items-center gap-1">
-              <MessageCircle className="h-3.5 w-3.5" /> {item.discussion.commentCount ?? 0}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Heart className="h-3.5 w-3.5" /> {item.discussion.likeCount ?? 0}
-            </span>
+        // cover on the right (shelf events have it on the left) so this card
+        // reads as a discussion at a glance, not another shelf update
+        <div className="mt-4 flex gap-4 rounded-md border border-dashed bg-muted-bg/40 p-4">
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm text-ink">{item.discussion.description}</p>
+            <div className="mt-3 flex items-center gap-4 text-xs text-muted">
+              <span className="inline-flex items-center gap-1">
+                <MessageCircle className="h-3.5 w-3.5" /> {item.discussion.commentCount ?? 0}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Heart className="h-3.5 w-3.5" /> {item.discussion.likeCount ?? 0}
+              </span>
+            </div>
           </div>
+          {item.book && (
+            <Link href={`/books/${item.book.id}`} className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              <BookCover coverImage={item.book.coverImage} title={item.book.title} size="sm" />
+            </Link>
+          )}
         </div>
       )}
 

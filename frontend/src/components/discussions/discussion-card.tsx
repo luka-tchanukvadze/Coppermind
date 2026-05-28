@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { MessageCircle, Heart, BookOpen } from "lucide-react";
+import { MessageCircle, Heart } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
+import { BookCover } from "@/components/shared/book-cover";
 import { formatRelative } from "@/lib/format";
 import type { DiscussionWithCounts } from "@/types/schema";
 
@@ -12,15 +13,15 @@ export function DiscussionCard({ discussion }: { discussion: DiscussionWithCount
         {d.title}
       </h3>
       {d.book && (
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-muted">
-          <BookOpen className="h-3 w-3 shrink-0" />
-          <span className="truncate">
+        <div className="mt-2 flex items-center gap-2.5">
+          <BookCover coverImage={d.book.coverImage} title={d.book.title} size="sm" />
+          <div className="min-w-0 text-xs text-muted">
             About <span className="font-medium text-ink">{d.book.title}</span>
             <span className="italic"> by {d.book.author}</span>
-          </span>
+          </div>
         </div>
       )}
-      <p className="mt-1.5 line-clamp-2 wrap-break-word text-sm leading-relaxed text-ink/80">
+      <p className="mt-2 line-clamp-2 wrap-break-word text-sm leading-relaxed text-ink/80">
         {d.description}
       </p>
       <footer className="mt-3 flex items-center gap-4 text-xs text-muted">
