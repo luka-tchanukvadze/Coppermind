@@ -30,7 +30,7 @@ export function ReadersTab({ readers }: { readers: BookReader[] }) {
           className="flex items-center gap-3 rounded-md border bg-surface p-3 transition-colors hover:border-border-strong"
         >
           <UserPic photo={user.photo} name={user.name} size="sm" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium text-ink">{user.name}</div>
             <div className="text-xs text-muted">{statusLabel(progress)}</div>
           </div>

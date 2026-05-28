@@ -112,7 +112,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             name={user?.name ?? "Guest"}
             size="sm"
           />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium text-ink">
               {isLoading ? "..." : (user?.name ?? "Guest")}
             </div>

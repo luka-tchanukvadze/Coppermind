@@ -58,7 +58,7 @@ export function PrivacySwitch({
 
   return (
     <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <Label htmlFor={id} className="block text-sm font-medium">
           {label}
         </Label>

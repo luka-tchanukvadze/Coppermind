@@ -80,7 +80,7 @@ export default function DiscussionDetailPage() {
               className="mt-6 flex items-center gap-3 rounded-md border bg-surface p-3 transition-colors hover:border-border-strong"
             >
               <BookCover coverImage={d.book.coverImage} title={d.book.title} size="sm" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="text-[11px] uppercase tracking-widest text-muted">
                   About this book
                 </div>

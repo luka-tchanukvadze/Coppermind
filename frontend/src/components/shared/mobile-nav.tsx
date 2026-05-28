@@ -41,14 +41,18 @@ export function MobileNav() {
       </header>
 
       {open && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 flex justify-end md:hidden"
+          role="dialog"
+          aria-modal="true"
+        >
           <button
             type="button"
             aria-label="Close menu"
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
           />
-          <div className="relative h-full w-65 animate-in slide-in-from-left-4 duration-200">
+          <div className="relative h-full w-65 animate-in slide-in-from-right-4 duration-200">
             <SidebarNav onNavigate={() => setOpen(false)} />
             <button
               type="button"

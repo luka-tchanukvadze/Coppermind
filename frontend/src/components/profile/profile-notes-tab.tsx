@@ -17,7 +17,7 @@ export function ProfileNotesTab({ groups }: { groups: NotesGroup[] }) {
         <section key={book.id}>
           <header className="mb-3 flex items-center gap-3">
             <BookCover coverImage={book.coverImage} title={book.title} size="sm" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="wrap-break-word font-serif text-lg font-medium text-ink">{book.title}</h3>
               <p className="truncate text-xs italic text-muted">{book.author}</p>
             </div>

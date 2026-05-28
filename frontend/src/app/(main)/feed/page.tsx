@@ -59,8 +59,11 @@ export default function FeedPage() {
 
       <ContinueReading />
 
+      {/* on mobile, sidebar (recs + friends reading) sits above the activity
+          feed so the small widgets aren't buried below an infinite scroll.
+          on lg+ the grid takes over and source order maps to columns */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div>
+        <div className="order-2 lg:order-1">
           <h2 className="mb-4 font-serif text-xl font-medium text-ink">Around your library</h2>
 
           {isLoading ? (
@@ -102,7 +105,7 @@ export default function FeedPage() {
           )}
         </div>
 
-        <aside className="space-y-8">
+        <aside className="order-1 space-y-8 lg:order-2">
           <Recommendations />
 
           <section>
@@ -124,7 +127,7 @@ export default function FeedPage() {
                 {friendsReading.map(({ user, book }) => (
                   <li key={user.id} className="flex items-center gap-3 text-sm">
                     <UserPic photo={user.photo} name={user.name} size="sm" />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <Link
                         href={`/profile/${user.id}`}
                         className="block truncate text-ink hover:text-accent"

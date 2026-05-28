@@ -17,6 +17,7 @@ import { ShelfListSkeleton } from "@/components/shelf/shelf-list-skeleton";
 import type { UserBookWithBook } from "@/types/schema";
 
 type SortKey = "added" | "updated" | "title" | "author";
+type Visibility = "all" | "public" | "private";
 
 // each sort runs on the already-fetched shelf - cheap, no extra fetch.
 // dates are ISO strings so localeCompare gives the right order without
@@ -40,18 +41,28 @@ function sortBooks(books: UserBookWithBook[], key: SortKey): UserBookWithBook[] 
 export default function ShelfPage() {
   const { data: shelf, isLoading, error } = useUserBooks(1, 100);
   const [sortKey, setSortKey] = useState<SortKey>("added");
+  const [visibility, setVisibility] = useState<Visibility>("all");
 
+  // total shelf size stays stable - subtitle reads from the unfiltered list
+  const totalShelfCount = shelf?.length ?? 0;
+
+  // sort first, then filter by visibility. status partition runs on the
+  // filtered set so tab counts reflect what's actually shown
   const sorted = useMemo(
     () => sortBooks(shelf ?? [], sortKey),
     [shelf, sortKey],
   );
+  const visible = useMemo(() => {
+    if (visibility === "public") return sorted.filter((b) => !b.isPrivate);
+    if (visibility === "private") return sorted.filter((b) => b.isPrivate);
+    return sorted;
+  }, [sorted, visibility]);
 
-  const books = sorted;
   const byStatus = {
-    all: books,
-    want: books.filter((b) => b.progress === "WANT_TO_READ"),
-    reading: books.filter((b) => b.progress === "READING"),
-    read: books.filter((b) => b.progress === "READ"),
+    all: visible,
+    want: visible.filter((b) => b.progress === "WANT_TO_READ"),
+    reading: visible.filter((b) => b.progress === "READING"),
+    read: visible.filter((b) => b.progress === "READ"),
   };
 
   if (isLoading) return <ShelfListSkeleton />;
@@ -64,7 +75,7 @@ export default function ShelfPage() {
     );
   }
 
-  if (books.length === 0) {
+  if (totalShelfCount === 0) {
     return (
       <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
         Your shelf is empty. Head to the{" "}
@@ -80,19 +91,34 @@ export default function ShelfPage() {
     <>
       <PageHeader
         title="My shelf"
-        subtitle={`${books.length} books on your shelf.`}
+        subtitle={`${totalShelfCount} books on your shelf.`}
         actions={
-          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="added">Recently added</SelectItem>
-              <SelectItem value="updated">Last updated</SelectItem>
-              <SelectItem value="title">Title A-Z</SelectItem>
-              <SelectItem value="author">Author A-Z</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as Visibility)}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Show" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All books</SelectItem>
+                <SelectItem value="public">Public only</SelectItem>
+                <SelectItem value="private">Private only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="added">Recently added</SelectItem>
+                <SelectItem value="updated">Last updated</SelectItem>
+                <SelectItem value="title">Title A-Z</SelectItem>
+                <SelectItem value="author">Author A-Z</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 

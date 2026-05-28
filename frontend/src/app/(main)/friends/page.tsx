@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -24,9 +25,13 @@ import { useMe, useAllUsers } from "@/lib/api/users";
 export default function FriendsPage() {
   const { data: me, isLoading: meLoading, error: meError } = useMe();
   const { data: friends = [], isLoading: friendsLoading } = useFriends();
-  const { data: incoming = [], isLoading: incomingLoading } = useIncomingRequests();
-  const { data: outgoing = [], isLoading: outgoingLoading } = useOutgoingRequests();
+  const { data: incoming = [], isLoading: incomingLoading } =
+    useIncomingRequests();
+  const { data: outgoing = [], isLoading: outgoingLoading } =
+    useOutgoingRequests();
   const { data: allUsers = [], isLoading: usersLoading } = useAllUsers();
+  // keep ALL hooks above the meError early return - rules-of-hooks
+  const [findQuery, setFindQuery] = useState("");
 
   // auth-fatal: bail without rendering tabs at all
   if (meError) {
@@ -61,7 +66,18 @@ export default function FriendsPage() {
   const friendsTabLoading = meLoading || friendsLoading;
   const requestsTabLoading = incomingLoading || outgoingLoading;
   const findTabLoading =
-    meLoading || friendsLoading || incomingLoading || outgoingLoading || usersLoading;
+    meLoading ||
+    friendsLoading ||
+    incomingLoading ||
+    outgoingLoading ||
+    usersLoading;
+
+  // client-side filter on the candidates. matches name only -
+  // backend no longer ships email on listings (privacy fix)
+  const trimmedFindQuery = findQuery.trim().toLowerCase();
+  const visibleCandidates = trimmedFindQuery
+    ? candidates.filter((u) => u.name.toLowerCase().includes(trimmedFindQuery))
+    : candidates;
 
   return (
     <>
@@ -69,7 +85,9 @@ export default function FriendsPage() {
 
       <Tabs defaultValue="friends">
         <TabsList className="flex-wrap">
-          <TabsTrigger value="friends">Friends ({friendUsers.length})</TabsTrigger>
+          <TabsTrigger value="friends">
+            Friends ({friendUsers.length})
+          </TabsTrigger>
           <TabsTrigger value="requests">
             Requests ({incoming.length + outgoing.length})
           </TabsTrigger>
@@ -81,7 +99,9 @@ export default function FriendsPage() {
             <FriendGridSkeleton />
           ) : friendUsers.length === 0 ? (
             <p className="text-sm text-muted">
-              No friends yet. Switch to <span className="font-medium text-ink">Find people</span> to send your first request.
+              No friends yet. Switch to{" "}
+              <span className="font-medium text-ink">Find people</span> to send
+              your first request.
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -143,18 +163,29 @@ export default function FriendsPage() {
         <TabsContent value="find">
           <div className="relative mb-6">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-            <Input className="max-w-md pl-9" placeholder="Search by name or email..." />
-            {/* TODO wire as controlled value, client-side name/email filter on candidates.
-                later: GET /users?q= for server-side search + pagination */}
+            <Input
+              className="max-w-md pl-9"
+              placeholder="Search by name..."
+              value={findQuery}
+              onChange={(e) => setFindQuery(e.target.value)}
+            />
+            {/* TODO later: GET /users?q= for server-side search + pagination
+                once the candidate list is bigger than a single page */}
           </div>
 
           {findTabLoading ? (
             <FindUserGridSkeleton />
           ) : candidates.length === 0 ? (
-            <p className="text-sm text-muted">No more people to add right now.</p>
+            <p className="text-sm text-muted">
+              No more people to add right now.
+            </p>
+          ) : visibleCandidates.length === 0 ? (
+            <p className="text-sm text-muted">
+              No matches for &ldquo;{findQuery}&rdquo;.
+            </p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {candidates.map((user) => (
+              {visibleCandidates.map((user) => (
                 <FindUserCard key={user.id} user={user} />
               ))}
             </div>

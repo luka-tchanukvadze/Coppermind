@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { UserPic } from "@/components/shared/user-pic";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { NewDiscussionDialog } from "@/components/discussions/new-discussion-dialog";
 import { DiscussionCard } from "@/components/discussions/discussion-card";
 import {
@@ -63,13 +65,27 @@ export default function DiscussionsPage() {
               <>
                 <div className="flex items-center">
                   {activeReaders.map((reader, i) => (
-                    <UserPic
-                      key={reader.id}
-                      photo={reader.photo}
-                      name={reader.name}
-                      size="sm"
-                      className={i === 0 ? "border-2 border-background" : "-ml-2 border-2 border-background"}
-                    />
+                    <Tooltip key={reader.id}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={`/profile/${reader.id}`}
+                          aria-label={reader.name}
+                          className={
+                            i === 0
+                              ? "rounded-full ring-offset-2 transition-transform hover:z-10 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                              : "-ml-2 rounded-full ring-offset-2 transition-transform hover:z-10 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                          }
+                        >
+                          <UserPic
+                            photo={reader.photo}
+                            name={reader.name}
+                            size="sm"
+                            className="border-2 border-background"
+                          />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>{reader.name}</TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted">

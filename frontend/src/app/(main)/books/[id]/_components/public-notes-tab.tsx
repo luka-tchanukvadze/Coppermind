@@ -16,7 +16,7 @@ export function PublicNotesTab({ notes }: { notes: CustomDataWithUser[] }) {
         <article key={note.id} className="rounded-md border bg-surface p-5">
           <header className="mb-3 flex items-center gap-2.5">
             <UserPic photo={note.user.photo} name={note.user.name} size="sm" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-ink">{note.user.name}</div>
               <div className="text-xs text-muted">{formatRelative(note.createdAt)}</div>
             </div>
