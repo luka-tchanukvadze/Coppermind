@@ -39,10 +39,18 @@ export function BookPicker({ value, onChange }: BookPickerProps) {
   if (value) {
     return (
       <div className="flex items-center gap-3 rounded-md border bg-surface p-3">
-        <BookCover coverImage={value.coverImage} title={value.title} size="sm" />
+        <BookCover
+          coverImage={value.coverImage}
+          title={value.title}
+          size="sm"
+        />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-ink">{value.title}</div>
-          <div className="truncate text-xs italic text-muted">{value.author}</div>
+          <div className="truncate text-sm font-medium text-ink">
+            {value.title}
+          </div>
+          <div className="truncate text-xs italic text-muted">
+            {value.author}
+          </div>
         </div>
         <Button
           type="button"
@@ -75,7 +83,9 @@ export function BookPicker({ value, onChange }: BookPickerProps) {
       </div>
 
       {matches.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-md border bg-surface shadow-md">
+        // bg-background (cream) instead of bg-surface (white)
+        // against the white dialog + textarea behind it
+        <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg">
           {matches.map((book) => (
             <li key={book.id}>
               <button
@@ -89,7 +99,9 @@ export function BookPicker({ value, onChange }: BookPickerProps) {
                 <BookOpen className="h-3.5 w-3.5 shrink-0 text-muted" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm text-ink">{book.title}</div>
-                  <div className="truncate text-xs italic text-muted">{book.author}</div>
+                  <div className="truncate text-xs italic text-muted">
+                    {book.author}
+                  </div>
                 </div>
               </button>
             </li>
