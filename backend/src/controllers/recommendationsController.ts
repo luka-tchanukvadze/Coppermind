@@ -7,6 +7,8 @@ import { recsCacheKey } from "../utils/recCache.js";
 const RECS_LIMIT = 4;
 const AVATAR_CAP = 3;
 const CACHE_TTL_SECONDS = 600; // 10 minutes
+// only use the user's top 3 genres - more than that makes the match too loose
+const TOP_GENRES_CONSIDERED = 3;
 
 type Recommendation = {
   book: { id: string; title: string; author: string; coverImage: string };
@@ -44,10 +46,10 @@ export const getRecommendations = catchAsync(
         },
         select: { requesterId: true, addresseeId: true },
       }),
-      // any progress state - just need the bookIds to exclude from recs
+      // any progress state. bookId excludes from recs, genres feed tier 2
       prisma.userBook.findMany({
         where: { userId },
-        select: { bookId: true },
+        select: { bookId: true, book: { select: { genres: true } } },
       }),
     ]);
     const friendIds = friendships.map((c) =>
@@ -118,11 +120,81 @@ export const getRecommendations = catchAsync(
       }
     }
 
-    // tier 2: popular fallback - only if tier 1 didn't fill all slots
-    const remaining = RECS_LIMIT - tier1.length;
+    // tier 2: "more of what you already read"
+    // fills the gap when friends run dry but my shelf still says something
+    const remainingAfterTier1 = RECS_LIMIT - tier1.length;
     const tier2: Recommendation[] = [];
-    if (remaining > 0) {
-      const excludeIds = [...myBookIds, ...tier1.map((r) => r.book.id)];
+    if (remainingAfterTier1 > 0 && mine.length > 0) {
+      // tally genres across my shelf
+      const genreCounts = new Map<string, number>();
+      for (const m of mine) {
+        for (const g of m.book.genres) {
+          genreCounts.set(g, (genreCounts.get(g) ?? 0) + 1);
+        }
+      }
+
+      if (genreCounts.size > 0) {
+        // most-read genre first
+        const topGenres = Array.from(genreCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, TOP_GENRES_CONSIDERED)
+          .map(([genre]) => genre);
+
+        const excludeIds = [...myBookIds, ...tier1.map((r) => r.book.id)];
+
+        const candidates = await prisma.book.findMany({
+          where: {
+            genres: { hasSome: topGenres },
+            ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
+          },
+          select: {
+            id: true,
+            title: true,
+            author: true,
+            coverImage: true,
+            genres: true,
+          },
+        });
+
+        // most shared genres wins. bookId tiebreaker so refreshes look stable
+        const ranked = candidates
+          .map((c) => ({
+            book: c,
+            overlap: c.genres.filter((g) => topGenres.includes(g)).length,
+          }))
+          .sort((a, b) => {
+            if (b.overlap !== a.overlap) return b.overlap - a.overlap;
+            return a.book.id.localeCompare(b.book.id);
+          })
+          .slice(0, remainingAfterTier1);
+
+        for (const r of ranked) {
+          // my preference order wins - "Fantasy" beats "Mystery" when both apply
+          const reasonGenre =
+            topGenres.find((g) => r.book.genres.includes(g)) ?? topGenres[0];
+          tier2.push({
+            book: {
+              id: r.book.id,
+              title: r.book.title,
+              author: r.book.author,
+              coverImage: r.book.coverImage,
+            },
+            reason: `Because you read ${reasonGenre}`,
+            friendAvatars: [],
+          });
+        }
+      }
+    }
+
+    // tier 3: popular fallback if tiers 1+2 left slots empty
+    const remainingAfterTier2 = RECS_LIMIT - tier1.length - tier2.length;
+    const tier3: Recommendation[] = [];
+    if (remainingAfterTier2 > 0) {
+      const excludeIds = [
+        ...myBookIds,
+        ...tier1.map((r) => r.book.id),
+        ...tier2.map((r) => r.book.id),
+      ];
       const grouped = await prisma.userBook.groupBy({
         by: ["bookId"],
         where: {
@@ -133,7 +205,7 @@ export const getRecommendations = catchAsync(
         },
         _count: { userId: true },
         orderBy: [{ _count: { userId: "desc" } }, { bookId: "asc" }],
-        take: remaining,
+        take: remainingAfterTier2,
       });
 
       if (grouped.length > 0) {
@@ -146,7 +218,7 @@ export const getRecommendations = catchAsync(
         for (const g of grouped) {
           const book = bookMap.get(g.bookId);
           if (!book) continue;
-          tier2.push({
+          tier3.push({
             book,
             reason: "Popular right now",
             friendAvatars: [],
@@ -155,7 +227,7 @@ export const getRecommendations = catchAsync(
       }
     }
 
-    const recommendations = [...tier1, ...tier2];
+    const recommendations = [...tier1, ...tier2, ...tier3];
 
     // best-effort cache write
     try {
