@@ -2,13 +2,15 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync.js";
 import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
-import { io, getReceiverSocketId } from "../socket/socket.js";
+import { io, getReceiverSocketIds } from "../socket/socket.js";
 
 export const sendMessage = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
     const friendId = req.params.friendId as string;
-    const { text } = req.body;
+    // clientMessageId is the frontend's optimistic id. echoed back in the
+    // response + socket emit so the sender's tabs can swap optimistic for real
+    const { text, clientMessageId } = req.body;
 
     // Validate input
     if (!text) return next(new AppError("Message text is required", 400));
@@ -56,13 +58,22 @@ export const sendMessage = catchAsync(
       data: { text, userId, conversationId: conversation.id },
     });
 
-    // Emit the new message to the receiver in real time if they're online
-    const receiverSocketId = getReceiverSocketId(friendId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", message);
+    // emit to BOTH sides. sender's other tabs need to see the new message,
+    // and the sending tab itself uses clientMessageId to swap optimistic
+    // for the real DB row (real id, real createdAt)
+    const payload = { ...message, clientMessageId: clientMessageId ?? null };
+    const targetSocketIds = [
+      ...getReceiverSocketIds(friendId),
+      ...getReceiverSocketIds(userId),
+    ];
+    for (const sockId of targetSocketIds) {
+      io.to(sockId).emit("newMessage", payload);
     }
 
-    res.status(201).json({ status: "success", data: { message } });
+    res.status(201).json({
+      status: "success",
+      data: { message: payload },
+    });
   },
 );
 

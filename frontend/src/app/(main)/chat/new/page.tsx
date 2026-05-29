@@ -35,8 +35,11 @@ export default function NewChatPage() {
     const trimmed = text.trim();
     if (!trimmed) return;
     setText("");
+    // no optimistic UI on this page (we navigate away on success) but still
+    // pass clientMessageId for backend dedupe symmetry
+    const clientMessageId = crypto.randomUUID();
     sendMessage.mutate(
-      { friendId, text: trimmed },
+      { friendId, text: trimmed, clientMessageId },
       {
         // backend creates the conversation on first send - jump to the real room
         onSuccess: (message) => router.replace(`/chat/${message.conversationId}`),

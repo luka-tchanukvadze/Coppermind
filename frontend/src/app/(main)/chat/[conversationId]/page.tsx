@@ -81,9 +81,12 @@ export default function ChatRoomPage() {
     if (!trimmed || !other || !me) return;
     setText("");
 
-    // optimistic: show my message instantly, reconciled by the onSuccess refetch
+    // clientMessageId rides along with the request and comes back on the
+    // socket emit so the dedupe in use-new-message-subscription can swap
+    // the optimistic message for the real one without flashing a duplicate
+    const clientMessageId = crypto.randomUUID();
     const optimistic: Message = {
-      id: `temp-${Date.now()}`,
+      id: clientMessageId,
       text: trimmed,
       createdAt: new Date().toISOString(),
       userId: me.id,
@@ -96,7 +99,7 @@ export default function ChatRoomPage() {
     );
 
     sendMessage.mutate(
-      { friendId: other.id, text: trimmed },
+      { friendId: other.id, text: trimmed, clientMessageId },
       {
         onError: (err) => {
           // roll back the optimistic message
@@ -106,7 +109,7 @@ export default function ChatRoomPage() {
               old
                 ? {
                     ...old,
-                    messages: old.messages.filter((m) => m.id !== optimistic.id),
+                    messages: old.messages.filter((m) => m.id !== clientMessageId),
                   }
                 : old,
           );

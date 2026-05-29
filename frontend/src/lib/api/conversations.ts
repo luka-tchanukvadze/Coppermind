@@ -11,6 +11,9 @@ export type Message = {
   userId: string;
   conversationId: string;
   user?: ChatUser; // populated on getConversation messages, not on send response
+  // present on socket emits + send response. frontend uses it to swap the
+  // optimistic message for the real one without showing a duplicate
+  clientMessageId?: string | null;
 };
 
 type Participant = {
@@ -40,7 +43,12 @@ type ConversationsResponse = { data: { conversation: ConversationPreview[] } };
 type ConversationResponse = { data: { conversation: ConversationDetail } };
 type SendMessageResponse = { data: { message: Message } };
 
-type SendMessageInput = { friendId: string; text: string };
+type SendMessageInput = {
+  friendId: string;
+  text: string;
+  // optimistic id - echoed back so we can swap optimistic for real
+  clientMessageId: string;
+};
 type UnsendMessageInput = { conversationId: string; messageId: string };
 
 async function fetchConversations(): Promise<ConversationPreview[]> {
@@ -56,7 +64,7 @@ async function fetchConversation(id: string): Promise<ConversationDetail> {
 async function sendMessageRequest(input: SendMessageInput): Promise<Message> {
   const res = await apiClient.post<SendMessageResponse>(
     `/messages/${input.friendId}`,
-    { text: input.text },
+    { text: input.text, clientMessageId: input.clientMessageId },
   );
   return res.data.message;
 }

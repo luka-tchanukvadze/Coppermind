@@ -20,12 +20,29 @@ export function useNewMessageSubscription() {
     if (!socket) return;
 
     const handleNewMessage = (message: Message) => {
-      // append to the open thread if it's loaded
+      // patch the open thread. three cases:
+      //  - matches clientMessageId of an optimistic row -> swap (real id/createdAt)
+      //  - matches an existing real id -> already there, skip
+      //  - otherwise -> append (incoming from the other side)
       queryClient.setQueryData<ConversationDetail>(
         ["conversation", message.conversationId],
         (old) => {
           if (!old) return old;
-          if (old.messages.some((m) => m.id === message.id)) return old; // dedupe
+          const cid = message.clientMessageId;
+
+          if (cid) {
+            const optimisticIdx = old.messages.findIndex((m) => m.id === cid);
+            if (optimisticIdx !== -1) {
+              const next = [...old.messages];
+              // keep the optimistic .user (own avatar/name) - server emit doesn't include it
+              const prevUser = next[optimisticIdx].user;
+              next[optimisticIdx] = { ...message, user: prevUser };
+              return { ...old, messages: next };
+            }
+          }
+
+          if (old.messages.some((m) => m.id === message.id)) return old;
+
           const sender = old.participants[0]?.user;
           return {
             ...old,

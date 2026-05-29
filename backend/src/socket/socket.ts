@@ -5,8 +5,11 @@ import jwt from "jsonwebtoken";
 import prisma from "../prisma.js";
 import { DecodedToken } from "../../../types.d.js";
 
-// Map userId -> socketId so I can send messages to specific users
-const userSocketMap = new Map<string, string>();
+// userId -> Set<socketId>. one user can have many active sockets (open tabs,
+// reconnects). storing a single id meant opening a 2nd tab silently kicked
+// the 1st off realtime, and fast disconnect/reconnect could orphan the live
+// socket. set lets every tab stay subscribed
+const userSocketMap = new Map<string, Set<string>>();
 
 let io: SocketServer;
 
@@ -54,16 +57,22 @@ export const initSocket = (httpServer: HttpServer) => {
   io.on("connection", (socket) => {
     const userId = socket.data.userId as string;
 
-    userSocketMap.set(userId, socket.id);
-    console.log(`User connected: ${userId} -> ${socket.id}`);
+    const sockets = userSocketMap.get(userId) ?? new Set<string>();
+    sockets.add(socket.id);
+    userSocketMap.set(userId, sockets);
+    console.log(
+      `User connected: ${userId} -> ${socket.id} (now ${sockets.size} live)`,
+    );
 
     socket.on("disconnect", () => {
-      // only clear if this socket is still the mapped one. a stale reconnect
-      // (or React StrictMode double-mount) can fire disconnect AFTER the new
-      // socket registered - deleting by userId alone would wipe the live entry
-      if (userSocketMap.get(userId) === socket.id) {
+      const set = userSocketMap.get(userId);
+      if (!set) return;
+      set.delete(socket.id);
+      if (set.size === 0) {
         userSocketMap.delete(userId);
-        console.log(`User disconnected: ${userId}`);
+        console.log(`User disconnected: ${userId} (last tab)`);
+      } else {
+        console.log(`Tab disconnected for ${userId} (${set.size} still live)`);
       }
     });
   });
@@ -71,8 +80,11 @@ export const initSocket = (httpServer: HttpServer) => {
   return io;
 };
 
-export const getReceiverSocketId = (userId: string): string | undefined => {
-  return userSocketMap.get(userId);
+// returns all live socket IDs for a user (could be many - tabs, devices).
+// callers should iterate and emit to each
+export const getReceiverSocketIds = (userId: string): string[] => {
+  const set = userSocketMap.get(userId);
+  return set ? Array.from(set) : [];
 };
 
 export { io };
