@@ -152,9 +152,10 @@ function useToggleLike(id: string) {
   return useMutation({
     mutationFn: () => toggleLikeRequest(id),
     onSuccess: () => {
-      // like count lives on both the list row and the detail
+      // like count lives on the list row, the detail, and feed cards
       queryClient.invalidateQueries({ queryKey: ["discussions"] });
       queryClient.invalidateQueries({ queryKey: ["discussion", id] });
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 }

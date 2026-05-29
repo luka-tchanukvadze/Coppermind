@@ -5,10 +5,19 @@ import { toast } from "sonner";
 import { EditEntryDialog } from "./edit-entry-dialog";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { formatShortDate } from "@/lib/format";
+import { useDeleteCustomData } from "@/lib/api/custom-data";
 import type { CustomData } from "@/types/schema";
 
 export function EntryCard({ entry }: { entry: CustomData }) {
   const paragraphs = entry.content.split("\n\n");
+  const deleteCustomData = useDeleteCustomData(entry.userBookId, entry.id);
+
+  const handleDelete = () => {
+    deleteCustomData.mutate(undefined, {
+      onSuccess: () => toast.success("Entry deleted"),
+      onError: (err) => toast.error(err.message),
+    });
+  };
 
   return (
     <article className="group rounded-md border bg-surface p-5 transition-colors hover:border-border-strong sm:p-7">
@@ -30,6 +39,8 @@ export function EntryCard({ entry }: { entry: CustomData }) {
                 <Pencil className="h-3.5 w-3.5" />
               </button>
             }
+            userBookId={entry.userBookId}
+            dataId={entry.id}
             defaultTitle={entry.title}
             defaultContent={entry.content}
             defaultIsPrivate={entry.isPrivate}
@@ -48,7 +59,7 @@ export function EntryCard({ entry }: { entry: CustomData }) {
             description="Once deleted, this note is gone. There is no undo."
             confirmLabel="Delete entry"
             variant="destructive"
-            onConfirm={() => toast.success("Entry deleted")}
+            onConfirm={handleDelete}
           />
         </div>
       </header>

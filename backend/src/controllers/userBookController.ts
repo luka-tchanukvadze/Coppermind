@@ -150,10 +150,10 @@ export const updateUserBook = catchAsync(
     // Only these fields are user-editable
     const { progress, isPrivate } = req.body;
 
-    // fetch first so I can ownership-check AND compare old vs new progress
+    // fetch first so I can ownership-check AND compare old vs new state
     const existing = await prisma.userBook.findUnique({
       where: { id },
-      select: { userId: true, bookId: true, progress: true },
+      select: { userId: true, bookId: true, progress: true, isPrivate: true },
     });
     if (!existing || existing.userId !== userId)
       return next(new AppError("No book found with that ID", 404));
@@ -171,6 +171,12 @@ export const updateUserBook = catchAsync(
         kind: progressToActivityKind(progress as Progress),
         bookId: existing.bookId,
       });
+    }
+
+    // flipping privacy moves me in or out of my friends' tier-1 "friends have
+    // this" pool, so their cached recs go stale. bust mine and theirs
+    if (isPrivate !== undefined && isPrivate !== existing.isPrivate) {
+      void invalidateRecsForUserAndFriends(userId);
     }
 
     res.status(200).json({

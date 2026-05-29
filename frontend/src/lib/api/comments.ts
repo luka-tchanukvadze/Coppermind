@@ -24,11 +24,12 @@ function useAddComment() {
   return useMutation({
     mutationFn: addCommentRequest,
     onSuccess: (_data, input) => {
-      // comments live inside the detail. count shows on the list row
+      // comments live inside the detail. count shows on the list row + feed cards
       queryClient.invalidateQueries({
         queryKey: ["discussion", input.discussionId],
       });
       queryClient.invalidateQueries({ queryKey: ["discussions"] });
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 }
@@ -42,6 +43,8 @@ function useDeleteComment() {
         queryKey: ["discussion", input.discussionId],
       });
       queryClient.invalidateQueries({ queryKey: ["discussions"] });
+      // feed card commentCount needs to drop too
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 }
