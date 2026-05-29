@@ -52,7 +52,7 @@ export async function searchOpenLibrary(
       author: doc.author_name?.[0] ?? "Unknown",
       genres: doc.subject ?? [],
       coverImage: doc.cover_i
-        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
         : "",
       externalApiId: doc.key,
     }));

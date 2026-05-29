@@ -17,17 +17,21 @@ interface BookCoverProps {
 }
 
 const SIZES = {
-  sm: { width: "w-13", w: 52, text: "text-[9px]" },
-  md: { width: "w-24", w: 96, text: "text-[11px]" },
-  lg: { width: "w-40", w: 160, text: "text-xs" },
-  xl: { width: "w-56", w: 224, text: "text-sm" },
+  sm: { width: "w-13", w: 52, text: "text-[9px]", sizes: "192px" },
+  md: { width: "w-24", w: 96, text: "text-[11px]", sizes: "288px" },
+  lg: { width: "w-40", w: 160, text: "text-xs", sizes: "480px" },
+  xl: {
+    width: "w-56",
+    w: 224,
+    text: "text-sm",
+    sizes: "(max-width: 768px) 640px, 960px",
+  },
 } as const;
 
 const FALLBACK_COLOR = "#7a8a99";
 
 const isHexColor = (s: string) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s);
-const isImageSrc = (s: string) =>
-  s.startsWith("/") || /^https?:\/\//.test(s);
+const isImageSrc = (s: string) => s.startsWith("/") || /^https?:\/\//.test(s);
 
 export function BookCover({
   coverImage,
@@ -67,7 +71,10 @@ export function BookCover({
           }}
         />
         {/* Thin dark line near the spine - sells the "physical book" feel. */}
-        <div className="absolute inset-y-0 left-1 w-0.5 bg-black/25" aria-hidden="true" />
+        <div
+          className="absolute inset-y-0 left-1 w-0.5 bg-black/25"
+          aria-hidden="true"
+        />
         {showTitle && (
           <div className="relative flex h-full flex-col justify-between p-2">
             <div className="line-clamp-4 wrap-break-word font-serif font-semibold leading-tight text-[#f2ebd5]">
@@ -85,12 +92,19 @@ export function BookCover({
   }
 
   return (
-    <div className={cn("relative aspect-2/3 shrink-0 overflow-hidden rounded-sm shadow-sm", sz.width, className)}>
+    <div
+      className={cn(
+        "relative aspect-2/3 shrink-0 overflow-hidden rounded-sm shadow-sm",
+        sz.width,
+        className,
+      )}
+    >
       <Image
         src={coverImage}
         alt={title}
         fill
-        sizes="(max-width: 768px) 33vw, 200px"
+        sizes={sz.sizes}
+        quality={90}
         className="object-cover"
         onError={() => setImgError(true)}
       />

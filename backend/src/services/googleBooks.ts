@@ -1,18 +1,43 @@
 import type { BookSearchResult } from "./types.js";
 
+// google returns multiple cover sizes when available. order matters: pickBestCover walks
+// it largest-first and takes the first one present. thumbnail is the universal fallback.
+export type GoogleImageLinks = {
+  extraLarge?: string;
+  large?: string;
+  medium?: string;
+  small?: string;
+  thumbnail?: string;
+  smallThumbnail?: string;
+};
+
 type GoogleBookItem = {
   id: string;
   volumeInfo: {
     title?: string;
     authors?: string[];
     categories?: string[];
-    imageLinks?: { thumbnail?: string };
+    imageLinks?: GoogleImageLinks;
   };
 };
 
 type GoogleBooksResponse = {
   items?: GoogleBookItem[];
 };
+
+// largest available cover, https-ified. mixed-content errors if we leave it as http
+export function pickBestGoogleCover(links: GoogleImageLinks | undefined): string {
+  if (!links) return "";
+  const url =
+    links.extraLarge ||
+    links.large ||
+    links.medium ||
+    links.small ||
+    links.thumbnail ||
+    links.smallThumbnail ||
+    "";
+  return url.replace(/^http:\/\//, "https://");
+}
 
 // google books search. Throws on any failure -> controller falls back to OL
 export async function searchGoogleBooks(
@@ -53,7 +78,7 @@ export async function searchGoogleBooks(
       title: item.volumeInfo.title!,
       author: item.volumeInfo.authors?.[0] ?? "Unknown",
       genres: item.volumeInfo.categories ?? [],
-      coverImage: item.volumeInfo.imageLinks?.thumbnail ?? "",
+      coverImage: pickBestGoogleCover(item.volumeInfo.imageLinks),
       externalApiId: item.id,
     }));
 
