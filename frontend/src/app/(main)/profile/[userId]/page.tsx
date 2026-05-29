@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { ProfileView } from "@/components/profile/profile-view";
+import { ProfileSkeleton } from "@/components/profile/profile-skeleton";
 import { useMe, useUser } from "@/lib/api/users";
 import { useUserBooksForUser } from "@/lib/api/user-books";
 import { ApiError } from "@/lib/api/client";
@@ -24,13 +25,7 @@ export default function PublicProfilePage() {
 
   if (isOwnProfile) return null;
 
-  if (userLoading || shelfLoading) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Loading...
-      </div>
-    );
-  }
+  if (userLoading || shelfLoading) return <ProfileSkeleton />;
 
   if (userError instanceof ApiError && userError.status === 404) notFound();
 

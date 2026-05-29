@@ -12,7 +12,8 @@ import { BookSearchResults } from "@/components/books/book-search-results";
 import { useBookGenres, useBooks } from "@/lib/api/books";
 
 const ALL = "All";
-const PAGE_SIZE = 20;
+
+const PAGE_SIZE = 30;
 
 export default function BooksPage() {
   const router = useRouter();

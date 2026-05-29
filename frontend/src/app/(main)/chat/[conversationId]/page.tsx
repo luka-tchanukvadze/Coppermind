@@ -59,7 +59,12 @@ export default function ChatRoomPage() {
     );
   }
 
-  if (error instanceof ApiError && error.status === 404) notFound();
+  if (error instanceof ApiError && error.status === 404) {
+    // drop the dead conversation's cache entry. without this the stale
+    // ConversationDetail sits in memory until a full reload
+    queryClient.removeQueries({ queryKey: ["conversation", conversationId] });
+    notFound();
+  }
   if (error || !conversation) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-muted">

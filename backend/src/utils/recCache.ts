@@ -7,7 +7,11 @@ export const recsCacheKey = (userId: string) => `recs:${userId}`;
 export async function invalidateRecs(...userIds: string[]) {
   try {
     if (userIds.length === 0) return;
-    await Promise.all(userIds.map((id) => redisClient.del(recsCacheKey(id))));
+    // pipeline the DELs into one round-trip. at N friends this saves
+    // N-1 round-trips vs Promise.all of separate calls
+    const multi = redisClient.multi();
+    for (const id of userIds) multi.del(recsCacheKey(id));
+    await multi.exec();
   } catch (err) {
     console.error("Failed to invalidate recs cache:", err);
   }
