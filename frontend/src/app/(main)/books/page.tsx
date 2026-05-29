@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
@@ -16,6 +16,14 @@ const ALL = "All";
 const PAGE_SIZE = 30;
 
 export default function BooksPage() {
+  return (
+    <Suspense fallback={null}>
+      <BooksContent />
+    </Suspense>
+  );
+}
+
+function BooksContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 

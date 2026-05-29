@@ -1,5 +1,4 @@
 import { SectionHeader } from "./section-header";
-import { SaveRow } from "./save-row";
 import { PrivacyRow } from "./privacy-row";
 
 export function PrivacySection() {
@@ -21,7 +20,6 @@ export function PrivacySection() {
           defaultChecked={true}
         />
       </div>
-      <SaveRow />
     </section>
   );
 }

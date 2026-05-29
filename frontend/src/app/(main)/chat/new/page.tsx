@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, notFound } from "next/navigation";
 import { ArrowLeft, Send, Smile } from "lucide-react";
@@ -12,6 +12,14 @@ import { useConversations, useSendMessage } from "@/lib/api/conversations";
 import { useUser } from "@/lib/api/users";
 
 export default function NewChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewChatContent />
+    </Suspense>
+  );
+}
+
+function NewChatContent() {
   const searchParams = useSearchParams();
   const friendId = searchParams.get("friendId");
   const router = useRouter();

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/shared/wordmark";
 
 export default function LandingPage() {
+  return (
+    <Suspense fallback={null}>
+      <LandingContent />
+    </Suspense>
+  );
+}
+
+function LandingContent() {
   const searchParams = useSearchParams();
 
   const returnUrl = searchParams.get("returnUrl");

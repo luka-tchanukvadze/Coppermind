@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,14 @@ import { useSignup } from "@/lib/api/auth";
 import { SignupSchema, type SignupInput } from "@/lib/schemas/auth";
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupContent />
+    </Suspense>
+  );
+}
+
+function SignupContent() {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
   const router = useRouter();
