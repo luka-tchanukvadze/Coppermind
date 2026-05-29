@@ -28,14 +28,20 @@ server.listen(PORT, async () => {
     await prisma.$connect();
     console.log("Database connected successfully");
   } catch (error) {
-    console.error("Failed to connect to the database:", error);
+    console.error(
+      "Failed to connect to the database:",
+      error instanceof Error ? error.message : error,
+    );
     process.exit(1);
   }
 
   try {
     await redisClient.connect();
   } catch (error) {
-    console.error("Failed to connect to Redis:", error);
+    console.error(
+      "Failed to connect to Redis:",
+      error instanceof Error ? error.message : error,
+    );
   }
 
   console.log(`Server is running on port ${PORT}`);

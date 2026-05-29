@@ -16,7 +16,10 @@ export async function createActivity(input: CreateActivityInput) {
   try {
     await prisma.activity.create({ data: input });
   } catch (err) {
-    console.error("Failed to create activity:", err);
+    console.error(
+      "Failed to create activity:",
+      err instanceof Error ? err.message : err,
+    );
   }
 }
 

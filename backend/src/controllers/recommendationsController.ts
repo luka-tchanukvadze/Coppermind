@@ -34,7 +34,10 @@ export const getRecommendations = catchAsync(
       }
     } catch (err) {
       // redis hiccup - fall through and recompute
-      console.error("Recs cache read failed:", err);
+      console.error(
+        "Recs cache read failed:",
+        err instanceof Error ? err.message : err,
+      );
     }
 
     // step 1 + 2 in parallel - independent queries, no reason to wait sequentially
@@ -235,7 +238,10 @@ export const getRecommendations = catchAsync(
         EX: CACHE_TTL_SECONDS,
       });
     } catch (err) {
-      console.error("Recs cache write failed:", err);
+      console.error(
+        "Recs cache write failed:",
+        err instanceof Error ? err.message : err,
+      );
     }
 
     res.status(200).json({

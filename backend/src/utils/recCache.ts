@@ -13,7 +13,10 @@ export async function invalidateRecs(...userIds: string[]) {
     for (const id of userIds) multi.del(recsCacheKey(id));
     await multi.exec();
   } catch (err) {
-    console.error("Failed to invalidate recs cache:", err);
+    console.error(
+      "Failed to invalidate recs cache:",
+      err instanceof Error ? err.message : err,
+    );
   }
 }
 
@@ -34,6 +37,9 @@ export async function invalidateRecsForUserAndFriends(userId: string) {
     );
     await invalidateRecs(userId, ...friendIds);
   } catch (err) {
-    console.error("Failed to cascade rec invalidation:", err);
+    console.error(
+      "Failed to cascade rec invalidation:",
+      err instanceof Error ? err.message : err,
+    );
   }
 }

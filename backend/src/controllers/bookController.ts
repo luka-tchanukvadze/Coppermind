@@ -228,12 +228,18 @@ export const searchBooks = catchAsync(
       books = await searchGoogleBooks(q);
       source = "google";
     } catch (err) {
-      console.error("Google search failed, falling back to OpenLibrary:", err);
+      console.error(
+        "Google search failed, falling back to OpenLibrary:",
+        err instanceof Error ? err.message : err,
+      );
       try {
         books = await searchOpenLibrary(q);
         source = "openlibrary";
       } catch (olErr) {
-        console.error("OpenLibrary search also failed:", olErr);
+        console.error(
+          "OpenLibrary search also failed:",
+          olErr instanceof Error ? olErr.message : olErr,
+        );
         return next(
           new AppError("Search service is temporarily unavailable", 502),
         );

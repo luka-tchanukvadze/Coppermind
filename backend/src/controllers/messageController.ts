@@ -41,21 +41,22 @@ export const sendMessage = catchAsync(
 
     if (!isFriend) return next(new AppError("Not your friend", 404));
 
-    let conversation = existingConversation;
-    // Create conversation if first time messaging this friend
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          participants: {
-            createMany: { data: [{ userId }, { userId: friendId }] },
+    // wrap conversation create + message create in a tx so a failed write 2
+    // doesn't leave an empty orphan conversation sitting around forever
+    const message = await prisma.$transaction(async (tx) => {
+      let convo = existingConversation;
+      if (!convo) {
+        convo = await tx.conversation.create({
+          data: {
+            participants: {
+              createMany: { data: [{ userId }, { userId: friendId }] },
+            },
           },
-        },
+        });
+      }
+      return tx.message.create({
+        data: { text, userId, conversationId: convo.id },
       });
-    }
-
-    // Send the message
-    const message = await prisma.message.create({
-      data: { text, userId, conversationId: conversation.id },
     });
 
     // emit to BOTH sides. sender's other tabs need to see the new message,

@@ -53,6 +53,7 @@ const authLimiter = rateLimit({
 app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/signup", authLimiter);
 app.use("/api/v1/users/forgotPassword", authLimiter);
+app.use("/api/v1/users/resetPassword", authLimiter);
 
 // Routes
 app.use("/api/v1/users", userRouter);

@@ -78,7 +78,7 @@ model CustomData {
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   userBookId  String
-  userBook    UserBook   @relation(fields: [userBookId], references: [id])
+  userBook    UserBook   @relation(fields: [userBookId], references: [id], onDelete: Cascade)
   activities  Activity[]
 
   @@index([userBookId])

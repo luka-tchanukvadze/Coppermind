@@ -113,16 +113,28 @@ export const signup = catchAsync(
     // 2) Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // 3) Create user in Prisma
-    const newUser = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: Role.user,
-        photo,
-      },
-    });
+    // 3) Create user in Prisma. catch P2002 (unique email) and return a generic
+    // error - the default Prisma->errorController mapping would reveal "Duplicate
+    // value for email" which lets an attacker enumerate registered accounts
+    let newUser;
+    try {
+      newUser = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role: Role.user,
+          photo,
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        return next(
+          new AppError("Could not create account. Try logging in.", 400),
+        );
+      }
+      throw err;
+    }
 
     // 4) Send JWT
     createSendToken(newUser as User, 201, req, res);
@@ -307,7 +319,7 @@ export const forgotPassword = catchAsync(
         message: "Token sent to email!",
       });
     } catch (err) {
-      console.error("Email error:", err);
+      console.error("Email error:", err instanceof Error ? err.message : err);
       await prisma.user.update({
         where: { id: user.id },
         data: {
