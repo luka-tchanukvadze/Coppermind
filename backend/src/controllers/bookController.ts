@@ -8,24 +8,57 @@ import { searchGoogleBooks } from "../services/googleBooks.js";
 import { searchOpenLibrary } from "../services/openLibrary.js";
 import type { BookSearchResult } from "../services/types.js";
 
-// one Redis key for the whole public list - simple to invalidate on writes. Fine until I need to scale
+// one Redis key for the whole public list. cheap to invalidate on writes
 const BOOKS_CACHE_KEY = "all_books";
+// lock so only one request rebuilds the cache at a time
+const BOOKS_LOCK_KEY = "all_books:lock";
+const BOOKS_CACHE_TTL = 60 * 60 * 24; // 1 day - safety net in case invalidation ever misses a write
+// auto-frees the lock if the rebuilder crashed before deleting it
+const BOOKS_LOCK_TTL = 10;
+const STAMPEDE_WAIT_MS = 100;
+const STAMPEDE_MAX_WAITS = 10; // ~1s total
 
-// shared cache-or-fetch path for any endpoint that needs the full catalog
-// (list, genre filter, genre aggregation). single source of truth for caching
+type CachedBooks = Awaited<ReturnType<typeof prisma.book.findMany>>;
+
+// cache-or-fetch the full catalog. used by list, genre filter, and genre tally
 async function loadCatalog() {
-  /* TODO: i need to add a SETNX lock if cache stampede ever becomes a real problem
-     (many users simultaneously hitting this the moment cache expires) */
   const cached = await redisClient.get(BOOKS_CACHE_KEY);
   if (cached) {
-    return {
-      books: JSON.parse(cached) as Awaited<ReturnType<typeof prisma.book.findMany>>,
-      source: "cache" as const,
-    };
+    return { books: JSON.parse(cached) as CachedBooks, source: "cache" as const };
   }
+
+  // NX = set only if missing. first request through wins the rebuild,
+  // everyone else falls through to the poll loop below
+  const gotLock = await redisClient.set(BOOKS_LOCK_KEY, "1", {
+    NX: true,
+    EX: BOOKS_LOCK_TTL,
+  });
+
+  if (gotLock) {
+    try {
+      const books = await prisma.book.findMany({ orderBy: { title: "asc" } });
+      await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(books), {
+        EX: BOOKS_CACHE_TTL,
+      });
+      return { books, source: "database" as const };
+    } finally {
+      // release even on error - otherwise next request waits the safety TTL
+      await redisClient.del(BOOKS_LOCK_KEY);
+    }
+  }
+
+  // someone else is rebuilding. wait for the cache to fill, up to ~1s
+  for (let i = 0; i < STAMPEDE_MAX_WAITS; i++) {
+    await new Promise((r) => setTimeout(r, STAMPEDE_WAIT_MS));
+    const retry = await redisClient.get(BOOKS_CACHE_KEY);
+    if (retry) {
+      return { books: JSON.parse(retry) as CachedBooks, source: "cache" as const };
+    }
+  }
+
+  // rebuilder slow or stuck. query directly so this request doesn't hang.
+  // skip the cache write - the rebuilder will do it
   const books = await prisma.book.findMany({ orderBy: { title: "asc" } });
-  // cache 1 week (604800s)
-  await redisClient.set(BOOKS_CACHE_KEY, JSON.stringify(books), { EX: 604800 });
   return { books, source: "database" as const };
 }
 
