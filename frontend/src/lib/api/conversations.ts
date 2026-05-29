@@ -2,7 +2,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
-type ChatUser = { id: string; name: string; photo: string | null };
+type ChatUser = {
+  id: string;
+  name: string;
+  photo: string | null;
+  lastSeenAt?: string | null;
+};
 
 export type Message = {
   id: string;

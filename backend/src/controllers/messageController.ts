@@ -89,7 +89,16 @@ export const getConversations = catchAsync(
         // Get only the other person's info - exclude yourself from participants
         participants: {
           where: { userId: { not: userId } },
-          include: { user: { select: { id: true, name: true, photo: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                photo: true,
+                lastSeenAt: true,
+              },
+            },
+          },
         },
         // Get the last message only - used for chat preview in sidebar
         messages: {
@@ -123,12 +132,30 @@ export const getConversation = catchAsync(
         // Get the other person's profile
         participants: {
           where: { userId: { not: userId } },
-          include: { user: { select: { id: true, name: true, photo: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                photo: true,
+                lastSeenAt: true,
+              },
+            },
+          },
         },
         // Get all messages sorted oldest first so chat reads top to bottom
         messages: {
           orderBy: { createdAt: "asc" },
-          include: { user: { select: { id: true, name: true, photo: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                photo: true,
+                lastSeenAt: true,
+              },
+            },
+          },
         },
       },
     });

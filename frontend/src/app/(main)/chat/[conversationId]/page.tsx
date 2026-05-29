@@ -7,10 +7,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Send, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { UserPic } from "@/components/shared/user-pic";
+import { OnlineDot } from "@/components/shared/online-dot";
+import { PresenceStatus } from "@/components/shared/presence-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { cn } from "@/lib/utils";
+import { useTypingFor } from "@/lib/presence/presence-provider";
 import {
   useConversation,
   useSendMessage,
@@ -45,6 +48,10 @@ export default function ChatRoomPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const messages = conversation?.messages ?? [];
+  const other = conversation?.participants[0]?.user;
+  // hooks must run unconditionally - useTypingFor tolerates undefined friendId
+  // and is a no-op while the conversation is still loading
+  const { isTyping, notifyTyping, stopTyping } = useTypingFor(other?.id);
 
   // scroll to newest whenever the count changes (open thread + incoming)
   useEffect(() => {
@@ -65,7 +72,7 @@ export default function ChatRoomPage() {
     queryClient.removeQueries({ queryKey: ["conversation", conversationId] });
     notFound();
   }
-  if (error || !conversation) {
+  if (error || !conversation || !other) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-muted">
         Could not load this conversation.
@@ -73,13 +80,13 @@ export default function ChatRoomPage() {
     );
   }
 
-  const other = conversation.participants[0]?.user;
   const groups = groupConsecutive(messages);
 
   const handleSend = () => {
     const trimmed = text.trim();
     if (!trimmed || !other || !me) return;
     setText("");
+    stopTyping();
 
     // clientMessageId rides along with the request and comes back on the
     // socket emit so the dedupe in use-new-message-subscription can swap
@@ -129,9 +136,19 @@ export default function ChatRoomPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <UserPic photo={other?.photo} name={other?.name ?? ""} size="md" />
+        <div className="relative shrink-0">
+          <UserPic photo={other?.photo} name={other?.name ?? ""} size="md" />
+          {other?.id && <OnlineDot userId={other.id} />}
+        </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-medium text-ink">{other?.name}</div>
+          {other?.id && (
+            <PresenceStatus
+              userId={other.id}
+              lastSeenAt={other.lastSeenAt}
+              isTyping={isTyping}
+            />
+          )}
         </div>
       </header>
 
@@ -187,7 +204,11 @@ export default function ChatRoomPage() {
           </Button>
           <Input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (e.target.value.trim()) notifyTyping();
+              else stopTyping();
+            }}
             placeholder={`Message ${other?.name?.split(" ")[0] ?? ""}...`}
             className="flex-1"
           />

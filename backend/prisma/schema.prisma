@@ -20,6 +20,9 @@ model User {
   passwordResetToken   String?   @db.VarChar(255)
   passwordResetExpires DateTime?
   active               Boolean   @default(true)
+  // written on the last-tab disconnect. used by the chat header to show
+  // "Last seen X ago" (or "Last seen recently" past 1 day) when offline
+  lastSeenAt           DateTime?
 
   userBooks            UserBook[]
   customData           CustomData[]

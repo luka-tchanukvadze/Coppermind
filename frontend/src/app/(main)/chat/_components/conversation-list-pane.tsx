@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
+import { OnlineDot } from "@/components/shared/online-dot";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useConversations } from "@/lib/api/conversations";
@@ -77,7 +78,10 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                     isActive ? "bg-accent-soft" : "hover:bg-muted-bg/40",
                   )}
                 >
-                  <UserPic photo={other?.photo} name={other?.name ?? ""} size="md" />
+                  <div className="relative shrink-0">
+                    <UserPic photo={other?.photo} name={other?.name ?? ""} size="md" />
+                    {other?.id && <OnlineDot userId={other.id} />}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className={cn("truncate font-medium", isActive ? "text-accent" : "text-ink")}>

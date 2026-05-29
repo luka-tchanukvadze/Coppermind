@@ -3,7 +3,20 @@
 // throws a hydration mismatch). When real users sign in we can switch to their
 // timezone preference once it's stored on the User model.
 
-const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 export function formatShortDate(iso: string): string {
   const d = new Date(iso);
@@ -39,6 +52,21 @@ export function formatRelative(iso: string): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
   return formatShortDate(iso);
+}
+
+// chat header presence text. <1min: "Last seen just now". <1h: "Last seen Xm ago".
+// <24h: "Last seen Xh ago". past 1 day deliberately fuzz to "recently"
+// instead of "5d ago" - feels less like surveillance
+export function formatLastSeen(iso: string): string {
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  if (minutes < 1) return "Last seen just now";
+  if (minutes < 60) return `Last seen ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Last seen ${hours}h ago`;
+  return "Last seen recently";
 }
 
 export function progressLabel(p: "WANT_TO_READ" | "READING" | "READ"): string {
