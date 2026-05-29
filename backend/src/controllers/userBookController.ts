@@ -161,7 +161,8 @@ export const updateUserBook = catchAsync(
     const updatedBook = await prisma.userBook.update({
       where: { id },
       data: { progress, isPrivate },
-      include: { book: true },
+      // include _count so the response matches UserBookWithBook
+      include: { book: true, _count: { select: { customData: true } } },
     });
 
     // log shelf event only when progress actually changed
@@ -206,7 +207,10 @@ export const getPublicUserBooks = catchAsync(
 
     const friendBooks = await prisma.userBook.findMany({
       ...query,
-      include: query.select ? undefined : { book: true },
+      // match the shape of getAllUserBooks so the frontend type is honest
+      include: query.select
+        ? undefined
+        : { book: true, _count: { select: { customData: true } } },
     });
 
     res.status(200).json({

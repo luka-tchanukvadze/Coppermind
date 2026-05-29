@@ -31,8 +31,9 @@ type UpdateUserBookInput = {
   isPrivate?: boolean;
 };
 
+// public list returns same shape as getAllUserBooks (_count nested)
 type PublicUserBooksResponse = {
-  data: { friendBooks: UserBookWithBook[] };
+  data: { friendBooks: UserBookApi[] };
 };
 
 async function addToShelfRequest(input: AddToShelfInput) {
@@ -70,7 +71,10 @@ async function fetchPublicUserBooks(
   const res = await apiClient.get<PublicUserBooksResponse>(
     `/user-books/user/${userId}`,
   );
-  return res.data.friendBooks;
+  return res.data.friendBooks.map(({ _count, ...rest }) => ({
+    ...rest,
+    customDataCount: _count?.customData ?? 0,
+  }));
 }
 
 function useAddToShelf() {
@@ -112,6 +116,9 @@ function useUpdateUserBook(id: string) {
       // shelf list changes, this entry changes
       queryClient.invalidateQueries({ queryKey: ["user-books"] });
       queryClient.invalidateQueries({ queryKey: ["user-book", id] });
+      // progress changes log an Activity row - my feed (and friends') gains
+      // a STARTED_READING / FINISHED_BOOK / WANTS_TO_READ entry
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 }

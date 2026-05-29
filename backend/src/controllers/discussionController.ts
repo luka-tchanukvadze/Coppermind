@@ -137,6 +137,7 @@ export const addComment = catchAsync(
 
     const comment = await prisma.comment.create({
       data: { content, userId, discussionId: id },
+      include: { user: { select: { id: true, name: true, photo: true } } },
     });
 
     void createActivity({

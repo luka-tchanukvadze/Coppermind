@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
-export type FriendUser = { id: string; name: string; photo: string | null };
+export type FriendUser = { id: string; name: string; photo: string };
 type FriendConnection = {
   id: string;
   requesterId: string;
@@ -91,16 +91,29 @@ function useSendFriendRequest() {
   });
 }
 
+// accept/remove ripple way past the friends list - profile counters change
+// for both sides, mutual-friend counts shift across the whole graph, the feed
+// gains or loses this user's activities, and rec tiers see the new friend
+// signal. invalidate by prefix so all userIds (me + them + everyone they
+// share mutuals with) get refetched
+function invalidateAfterFriendshipChange(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  queryClient.invalidateQueries({ queryKey: ["friends"] });
+  queryClient.invalidateQueries({ queryKey: ["friends-incoming"] });
+  queryClient.invalidateQueries({ queryKey: ["friends-outgoing"] });
+  queryClient.invalidateQueries({ queryKey: ["friends-mutual"] });
+  queryClient.invalidateQueries({ queryKey: ["user-profile-stats"] });
+  queryClient.invalidateQueries({ queryKey: ["feed"] });
+  queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+}
+
 function useAcceptFriendRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: acceptFriendRequest,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friends"] });
-      queryClient.invalidateQueries({ queryKey: ["friends-incoming"] });
-      queryClient.invalidateQueries({ queryKey: ["friends-outgoing"] });
-    },
+    onSuccess: () => invalidateAfterFriendshipChange(queryClient),
   });
 }
 
@@ -109,11 +122,7 @@ function useRemoveFriend() {
 
   return useMutation({
     mutationFn: removeFriend,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friends"] });
-      queryClient.invalidateQueries({ queryKey: ["friends-incoming"] });
-      queryClient.invalidateQueries({ queryKey: ["friends-outgoing"] });
-    },
+    onSuccess: () => invalidateAfterFriendshipChange(queryClient),
   });
 }
 
