@@ -1,21 +1,42 @@
 import express from "express";
 import * as userController from "./../controllers/userController.js";
 import * as authController from "../controllers/authController.js";
+import { validate } from "../utils/validate.js";
+import {
+  signupSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  updatePasswordSchema,
+} from "../schemas/auth.js";
+import { updateMeSchema } from "../schemas/users.js";
 
 const router = express.Router();
 
-router.post("/signup", authController.signup);
-router.post("/login", authController.login);
+router.post("/signup", validate(signupSchema), authController.signup);
+router.post("/login", validate(loginSchema), authController.login);
 router.post("/logout", authController.logout);
-router.post("/forgotPassword", authController.forgotPassword);
-router.patch("/resetPassword/:token", authController.resetPassword);
+router.post(
+  "/forgotPassword",
+  validate(forgotPasswordSchema),
+  authController.forgotPassword,
+);
+router.patch(
+  "/resetPassword/:token",
+  validate(resetPasswordSchema),
+  authController.resetPassword,
+);
 
 // Protect all other routes after this middleware
 router.use(authController.protect);
 
-router.patch("/updateMyPassword", authController.updatePassword);
+router.patch(
+  "/updateMyPassword",
+  validate(updatePasswordSchema),
+  authController.updatePassword,
+);
 router.get("/me", userController.getMe, userController.getUser);
-router.patch("/updateMe", userController.updateMe);
+router.patch("/updateMe", validate(updateMeSchema), userController.updateMe);
 router.delete("/deleteMe", userController.deleteMe);
 
 // Restricting to all other routes after this middleware

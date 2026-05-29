@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -18,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAddCustomData } from "@/lib/api/custom-data";
+import { EntrySchema, type EntryInput } from "@/lib/schemas/entries";
 
 interface NewEntryDialogProps {
   userBookId: string;
@@ -26,38 +29,47 @@ interface NewEntryDialogProps {
 // Backend: POST /user-books/:id/custom-data expects { title, content, isPrivate }.
 export function NewEntryDialog({ userBookId }: NewEntryDialogProps) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  // isPrivate stays outside the form since Switch isn't a native input
   const [isPrivate, setIsPrivate] = useState(true);
   const addCustomData = useAddCustomData(userBookId);
 
-  const handleSave = () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error("Title and content are required");
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<EntryInput>({
+    resolver: zodResolver(EntrySchema),
+    defaultValues: { title: "", content: "" },
+  });
 
+  const resetAll = () => {
+    reset({ title: "", content: "" });
+    setIsPrivate(true);
+  };
+
+  const onValid = (data: EntryInput) => {
     addCustomData.mutate(
-      {
-        title: title.trim(),
-        content: content.trim(),
-        isPrivate,
-      },
+      { title: data.title, content: data.content, isPrivate },
       {
         onSuccess: () => {
           setOpen(false);
-          setTitle("");
-          setContent("");
-          setIsPrivate(true);
+          resetAll();
           toast.success("Entry created");
         },
-        onError: () => toast.error("Failed to create entry. Try again?"),
+        onError: (err) => toast.error(err.message),
       },
     );
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) resetAll();
+      }}
+    >
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4" /> New entry
@@ -71,16 +83,18 @@ export function NewEntryDialog({ userBookId }: NewEntryDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               placeholder="A line that names this thought"
               maxLength={255}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register("title")}
             />
+            {errors.title && (
+              <p className="text-xs text-error">{errors.title.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="content">Content</Label>
@@ -88,9 +102,11 @@ export function NewEntryDialog({ userBookId }: NewEntryDialogProps) {
               id="content"
               rows={8}
               placeholder="Write freely. Markdown-style line breaks render as paragraphs."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              {...register("content")}
             />
+            {errors.content && (
+              <p className="text-xs text-error">{errors.content.message}</p>
+            )}
           </div>
           <div className="flex items-start justify-between gap-4 rounded-md border p-3">
             <div>
@@ -101,21 +117,21 @@ export function NewEntryDialog({ userBookId }: NewEntryDialogProps) {
             </div>
             <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
           </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              disabled={addCustomData.isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={addCustomData.isPending}>
+              {addCustomData.isPending ? "Saving..." : "Save entry"}
+            </Button>
+          </DialogFooter>
         </form>
-
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => setOpen(false)}
-            disabled={addCustomData.isPending}
-          >
-            Cancel
-          </Button>
-
-          <Button onClick={handleSave} disabled={addCustomData.isPending}>
-            {addCustomData.isPending ? "Saving..." : "Save entry"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

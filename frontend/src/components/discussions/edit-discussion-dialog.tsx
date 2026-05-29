@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -15,6 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useUpdateDiscussion } from "@/lib/api/discussions";
+import {
+  EditDiscussionSchema,
+  type EditDiscussionInput,
+} from "@/lib/schemas/discussions";
 
 interface EditDiscussionDialogProps {
   open: boolean;
@@ -35,25 +41,26 @@ export function EditDiscussionDialog({
   defaultTitle,
   defaultDescription,
 }: EditDiscussionDialogProps) {
-  const [title, setTitle] = useState(defaultTitle);
-  const [description, setDescription] = useState(defaultDescription);
   const updateDiscussion = useUpdateDiscussion();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<EditDiscussionInput>({
+    resolver: zodResolver(EditDiscussionSchema),
+    defaultValues: { title: defaultTitle, description: defaultDescription },
+  });
 
   // re-seed inputs each time the dialog opens (drop any abandoned edits)
   useEffect(() => {
-    if (open) {
-      setTitle(defaultTitle);
-      setDescription(defaultDescription);
-    }
-  }, [open, defaultTitle, defaultDescription]);
+    if (open) reset({ title: defaultTitle, description: defaultDescription });
+  }, [open, defaultTitle, defaultDescription, reset]);
 
-  const handleSave = () => {
-    if (!title.trim() || !description.trim()) {
-      toast.error("Title and description are required");
-      return;
-    }
+  const onValid = (data: EditDiscussionInput) => {
     updateDiscussion.mutate(
-      { id: discussionId, title: title.trim(), description: description.trim() },
+      { id: discussionId, title: data.title, description: data.description },
       {
         onSuccess: () => {
           onOpenChange(false);
@@ -72,39 +79,39 @@ export function EditDiscussionDialog({
           <DialogDescription>Tighten the title or rewrite the body.</DialogDescription>
         </DialogHeader>
 
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-        >
+        <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
           <div className="space-y-1.5">
             <Label htmlFor="discussion-title">Title</Label>
-            <Input
-              id="discussion-title"
-              maxLength={255}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <Input id="discussion-title" maxLength={255} {...register("title")} />
+            {errors.title && (
+              <p className="text-xs text-error">{errors.title.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="discussion-description">Description</Label>
             <Textarea
               id="discussion-description"
               rows={6}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              {...register("description")}
             />
+            {errors.description && (
+              <p className="text-xs text-error">{errors.description.message}</p>
+            )}
           </div>
-        </form>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={updateDiscussion.isPending}>
-            {updateDiscussion.isPending ? "Saving..." : "Save changes"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateDiscussion.isPending}>
+              {updateDiscussion.isPending ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

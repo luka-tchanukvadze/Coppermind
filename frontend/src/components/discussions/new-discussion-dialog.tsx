@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -18,6 +20,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { BookPicker } from "./book-picker";
 import { useCreateDiscussion } from "@/lib/api/discussions";
+import {
+  NewDiscussionSchema,
+  type NewDiscussionInput,
+} from "@/lib/schemas/discussions";
 import type { Book } from "@/types/schema";
 
 interface Props {
@@ -32,32 +38,32 @@ interface Props {
 // Backend: POST /discussions expects { title, description, bookId? }
 export function NewDiscussionDialog({ trigger, preselectedBook }: Props = {}) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  // book is kept outside react-hook-form since BookPicker is a custom control
   const [book, setBook] = useState<Book | null>(preselectedBook ?? null);
   const createDiscussion = useCreateDiscussion();
 
-  const reset = () => {
-    setTitle("");
-    setDescription("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<NewDiscussionInput>({
+    resolver: zodResolver(NewDiscussionSchema),
+    defaultValues: { title: "", description: "" },
+  });
+
+  const resetAll = () => {
+    reset({ title: "", description: "" });
     setBook(preselectedBook ?? null);
   };
 
-  const handlePost = () => {
-    if (!title.trim() || !description.trim()) {
-      toast.error("Title and description are required");
-      return;
-    }
+  const onValid = (data: NewDiscussionInput) => {
     createDiscussion.mutate(
-      {
-        title: title.trim(),
-        description: description.trim(),
-        bookId: book?.id ?? null,
-      },
+      { title: data.title, description: data.description, bookId: book?.id ?? null },
       {
         onSuccess: () => {
           setOpen(false);
-          reset();
+          resetAll();
           toast.success("Discussion posted");
         },
         onError: (err) => toast.error(err.message),
@@ -70,7 +76,7 @@ export function NewDiscussionDialog({ trigger, preselectedBook }: Props = {}) {
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) reset();
+        if (!next) resetAll();
       }}
     >
       <DialogTrigger asChild>
@@ -88,22 +94,18 @@ export function NewDiscussionDialog({ trigger, preselectedBook }: Props = {}) {
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handlePost();
-          }}
-        >
+        <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               placeholder="What are you wondering about?"
               maxLength={255}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register("title")}
             />
+            {errors.title && (
+              <p className="text-xs text-error">{errors.title.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>About a book? (optional)</Label>
@@ -115,20 +117,26 @@ export function NewDiscussionDialog({ trigger, preselectedBook }: Props = {}) {
               id="description"
               rows={6}
               placeholder="Set the scene. The first paragraph is what people see in the feed."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              {...register("description")}
             />
+            {errors.description && (
+              <p className="text-xs text-error">{errors.description.message}</p>
+            )}
           </div>
-        </form>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handlePost} disabled={createDiscussion.isPending}>
-            {createDiscussion.isPending ? "Posting..." : "Post discussion"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createDiscussion.isPending}>
+              {createDiscussion.isPending ? "Posting..." : "Post discussion"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

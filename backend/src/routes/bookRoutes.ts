@@ -2,6 +2,8 @@ import express from "express";
 
 import * as authController from "../controllers/authController.js";
 import * as bookController from "../controllers/bookController.js";
+import { validate } from "../utils/validate.js";
+import { addBookSchema } from "../schemas/books.js";
 
 const router = express.Router();
 
@@ -10,7 +12,11 @@ router.use(authController.protect);
 
 router
   .route("/")
-  .post(authController.restrictTo("admin"), bookController.addBook)
+  .post(
+    authController.restrictTo("admin"),
+    validate(addBookSchema),
+    bookController.addBook,
+  )
   .get(bookController.getAllBooks);
 
 router.route("/search").get(bookController.searchBooks);

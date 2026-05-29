@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -17,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateCustomData } from "@/lib/api/custom-data";
+import { EntrySchema, type EntryInput } from "@/lib/schemas/entries";
 
 interface EditEntryDialogProps {
   trigger: ReactNode;
@@ -37,32 +40,30 @@ export function EditEntryDialog({
   defaultIsPrivate,
 }: EditEntryDialogProps) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(defaultTitle);
-  const [content, setContent] = useState(defaultContent);
   const [isPrivate, setIsPrivate] = useState(defaultIsPrivate);
   const updateCustomData = useUpdateCustomData(userBookId, dataId);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<EntryInput>({
+    resolver: zodResolver(EntrySchema),
+    defaultValues: { title: defaultTitle, content: defaultContent },
+  });
 
   // re-seed inputs each time the dialog opens (drop any abandoned edits)
   useEffect(() => {
     if (open) {
-      setTitle(defaultTitle);
-      setContent(defaultContent);
+      reset({ title: defaultTitle, content: defaultContent });
       setIsPrivate(defaultIsPrivate);
     }
-  }, [open, defaultTitle, defaultContent, defaultIsPrivate]);
+  }, [open, defaultTitle, defaultContent, defaultIsPrivate, reset]);
 
-  const handleSave = () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error("Title and content are required");
-      return;
-    }
-
+  const onValid = (data: EntryInput) => {
     updateCustomData.mutate(
-      {
-        title: title.trim(),
-        content: content.trim(),
-        isPrivate,
-      },
+      { title: data.title, content: data.content, isPrivate },
       {
         onSuccess: () => {
           setOpen(false);
@@ -82,30 +83,20 @@ export function EditEntryDialog({
           <DialogDescription>Refine a thought or change its visibility.</DialogDescription>
         </DialogHeader>
 
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-        >
+        <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
           <div className="space-y-1.5">
             <Label htmlFor="entry-title">Title</Label>
-            <Input
-              id="entry-title"
-              maxLength={255}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <Input id="entry-title" maxLength={255} {...register("title")} />
+            {errors.title && (
+              <p className="text-xs text-error">{errors.title.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="entry-content">Content</Label>
-            <Textarea
-              id="entry-content"
-              rows={8}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+            <Textarea id="entry-content" rows={8} {...register("content")} />
+            {errors.content && (
+              <p className="text-xs text-error">{errors.content.message}</p>
+            )}
           </div>
           <div className="flex items-start justify-between gap-4 rounded-md border p-3">
             <div>
@@ -114,20 +105,21 @@ export function EditEntryDialog({
             </div>
             <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
           </div>
-        </form>
 
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => setOpen(false)}
-            disabled={updateCustomData.isPending}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={updateCustomData.isPending}>
-            {updateCustomData.isPending ? "Saving..." : "Save changes"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              disabled={updateCustomData.isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateCustomData.isPending}>
+              {updateCustomData.isPending ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
