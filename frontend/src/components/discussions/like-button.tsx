@@ -15,7 +15,9 @@ export function LikeButton({
   initialCount: number;
   initialLiked?: boolean;
 }) {
-  // liked is local only - backend has no likedByMe, so it resets on refresh
+  // liked + count are local for optimistic UX. initial values come from
+  // the server (likedByMe + likeCount on the detail response), so refresh
+  // shows the right state
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const toggleLike = useToggleLike(discussionId);

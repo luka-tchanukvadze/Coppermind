@@ -11,7 +11,6 @@ import type { User } from "@/types/schema";
 export function FindUserCard({ user }: { user: User }) {
   const { data: mutuals = [] } = useMutualFriends(user.id);
   const mutual = mutuals.length;
-
   const order = orderFromPhoto(user.photo);
 
   return (

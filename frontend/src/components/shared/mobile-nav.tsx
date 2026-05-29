@@ -45,6 +45,7 @@ export function MobileNav() {
           className="fixed inset-0 z-50 flex justify-end md:hidden"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="mobile-nav-title"
         >
           <button
             type="button"
@@ -53,6 +54,11 @@ export function MobileNav() {
             className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
           />
           <div className="relative h-full w-65 animate-in slide-in-from-right-4 duration-200">
+            {/* visually hidden but referenced by aria-labelledby so screen
+                readers announce what this dialog is */}
+            <h2 id="mobile-nav-title" className="sr-only">
+              Navigation menu
+            </h2>
             <SidebarNav onNavigate={() => setOpen(false)} />
             <button
               type="button"

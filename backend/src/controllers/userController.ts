@@ -124,6 +124,10 @@ export const deleteUserById = catchAsync(
   },
 );
 
+/* TODO N+1: frontend FindUserCard fires useMutualFriends per candidate to
+   show "X mutual friends". add a viewer-scoped mutualCount here (2 queries:
+   my friend connections + all friend connections of users in the list, then
+   intersect in JS) so the page renders without the per-card fan-out */
 export const getAllUsers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const users = await prisma.user.findMany({

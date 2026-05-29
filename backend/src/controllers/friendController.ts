@@ -119,6 +119,11 @@ export const removeConnection = catchAsync(
   },
 );
 
+/* TODO N+1: frontend FriendCard fires useUserBooksForUser per friend to
+   show "Reading X" + "Y books on shelf". add readingBook + publicBookCount
+   here (2 extra queries: distinct userBook by userId ordered by
+   progressUpdatedAt for readingBook, groupBy userId + _count for the total).
+   then drop the per-card fetch on the frontend */
 export const getFriends = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
