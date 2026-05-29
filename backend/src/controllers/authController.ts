@@ -184,9 +184,12 @@ export const protect = catchAsync(
       token = req.cookies.jwt;
     }
 
-    if (!token) {
-      return next(new AppError("You are not logged in.", 401));
-    }
+    // single generic message for every 401 path - don't leak account state.
+    // "user doesn't exist", "password changed", "no token" all look the same
+    // to a probing attacker
+    const unauthorized = () => next(new AppError("Unauthorized", 401));
+
+    if (!token) return unauthorized();
 
     // 2) Verify token
     const decoded = (await (promisify(jwt.verify) as any)(
@@ -199,15 +202,11 @@ export const protect = catchAsync(
       where: { id: decoded.id },
     });
 
-    if (!currentUser || currentUser.active === false) {
-      return next(new AppError("The user no longer exists.", 401));
-    }
+    if (!currentUser || currentUser.active === false) return unauthorized();
 
     // 4) Check if password changed after token
     if (changedPasswordAfter(decoded.iat, currentUser as User)) {
-      return next(
-        new AppError("Password recently changed. Log in again.", 401),
-      );
+      return unauthorized();
     }
 
     // 5) Grant access
