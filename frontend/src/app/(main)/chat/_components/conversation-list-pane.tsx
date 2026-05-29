@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
 import { OnlineDot } from "@/components/shared/online-dot";
+import { ConversationListSkeleton } from "@/components/chat/chat-skeleton";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useConversations } from "@/lib/api/conversations";
@@ -49,7 +50,7 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
       </header>
 
       {isLoading ? (
-        <p className="px-5 py-4 text-sm text-muted">Loading...</p>
+        <ConversationListSkeleton />
       ) : convos.length === 0 ? (
         <p className="px-5 py-4 text-sm text-muted">
           No conversations yet. Pick a{" "}

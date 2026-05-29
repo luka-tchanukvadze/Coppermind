@@ -12,6 +12,7 @@ import { PresenceStatus } from "@/components/shared/presence-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageBubble } from "@/components/chat/message-bubble";
+import { ChatThreadSkeleton } from "@/components/chat/chat-skeleton";
 import { cn } from "@/lib/utils";
 import { useTypingFor } from "@/lib/presence/presence-provider";
 import {
@@ -59,11 +60,7 @@ export default function ChatRoomPage() {
   }, [messages.length]);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted">
-        Loading...
-      </div>
-    );
+    return <ChatThreadSkeleton />;
   }
 
   if (error instanceof ApiError && error.status === 404) {

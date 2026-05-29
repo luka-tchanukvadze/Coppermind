@@ -50,7 +50,7 @@ function LandingContent() {
       <section className="mx-auto max-w-3xl px-6 pt-20 pb-24 text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface px-3 py-1 text-xs font-medium text-muted">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />A library that
-          actually feels like one
+          feels like one
         </div>
         <h1 className="font-serif text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">
           Your private library.
@@ -58,10 +58,9 @@ function LandingContent() {
           <span className="italic text-accent">Your public shelves.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-balance text-base leading-relaxed text-muted sm:text-lg">
-          Track your reading, keep your thoughts beside the book, and talk books
-          with friends who actually read them. Coppermind is a quieter kind of
-          reading app - built for the long relationship with a book, not the
-          quick rating.
+          Track your reading, keep your notes with the book, and talk books with
+          friends who actually read. A calmer reading app - no ratings race, no
+          algorithm.
         </p>
         <div className="mt-10 flex items-center justify-center gap-3">
           <Button asChild size="lg">
@@ -102,8 +101,8 @@ function LandingContent() {
         <Feature
           icon={<MessageSquareHeart className="h-5 w-5" />}
           kicker="Community"
-          title="Talk books, not algorithms."
-          body="Real friendships, not followers. Direct messages. Discussion threads that actually end up somewhere. No leaderboards, no streaks, no badges. Just the people you read with."
+          title="Just you and the people you read with."
+          body="Real friends, not followers. Direct messages and discussion threads that go somewhere. No leaderboards. No streaks. No badges."
           example={
             <div className="space-y-3 rounded-md border bg-surface p-6 shadow-[0_1px_0_#e8e2d5]">
               <div className="flex gap-3">
@@ -128,8 +127,8 @@ function LandingContent() {
         <Feature
           icon={<BookMarked className="h-5 w-5" />}
           kicker="Shelves"
-          title="A shelf that actually feels like one."
-          body="Want to read, reading, finished - three honest states. No progress bars that pretend to know you. No star ratings you don't want to give. Just the books, how you found them, and what you thought."
+          title="A shelf, not a spreadsheet."
+          body="Want to read, reading, finished - that's it. No progress bars, no star ratings. Just your books and what you thought of them."
           example={
             <div className="space-y-2 rounded-md border bg-surface p-5 shadow-[0_1px_0_#e8e2d5]">
               {[
