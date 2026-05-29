@@ -1,6 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  provider        = "prisma-client-js"
+  // enables relationLoadStrategy: "join" on findMany/findFirst etc.
+  previewFeatures = ["relationJoins"]
+  output          = "../generated/prisma"
 }
 
 datasource db {
@@ -119,6 +121,7 @@ model Message {
   conversation    Conversation @relation(fields: [conversationId], references: [id])
 
   @@index([conversationId, createdAt])
+  @@index([userId])
   @@map("messages")
 }
 

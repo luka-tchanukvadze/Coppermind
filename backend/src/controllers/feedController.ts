@@ -45,6 +45,9 @@ export const getFeed = catchAsync(
     // Promise.all runs them in parallel so the user waits for the slower one only
     const [activitiesRaw, friendsReadingRaw] = await Promise.all([
       prisma.activity.findMany({
+        // collapse the include fan-out into a single SQL query - kills
+        // ~10 round-trips to Prisma Cloud per feed page
+        relationLoadStrategy: "join",
         where: { userId: { in: friendIds } },
         orderBy: { createdAt: "desc" },
         // ask for one MORE than we need. if we get the extra row back, we know
