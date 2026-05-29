@@ -2,6 +2,9 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+
+import redisClient from "./redisClient.js";
 
 import userRouter from "./routes/userRoutes.js";
 import bookRouter from "./routes/bookRoutes.js";
@@ -19,6 +22,11 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
 const app = express();
+
+// trust the first hop. host (render/fly/nginx) terminates TLS so req.secure
+// + req.ip come from x-forwarded-* headers. without this the JWT cookie
+// ships without secure in prod and rate-limit sees one shared proxy IP
+app.set("trust proxy", 1);
 
 // 1) Global Middlewares
 
@@ -42,13 +50,18 @@ app.use(cookieParser());
 
 // rate limit on auth endpoints - 10 attempts per 15 min per IP.
 // blunts brute-force on login + signup spam. forgotPassword too so
-// attackers can't flood inboxes
+// attackers can't flood inboxes. counter lives in redis so it survives
+// container restarts and works across multiple backend instances
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: "fail", message: "Too many attempts, try again later" },
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+    prefix: "rl:auth:",
+  }),
 });
 app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/signup", authLimiter);

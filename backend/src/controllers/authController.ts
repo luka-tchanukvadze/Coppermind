@@ -175,9 +175,13 @@ export const login = catchAsync(
 );
 
 export const logout = (req: Request, res: Response) => {
+  // mirror the flags from createSendToken - browsers only overwrite a
+  // cookie if every flag (secure, sameSite, path) matches the original
   res.cookie("jwt", "", {
     expires: new Date(0),
     httpOnly: true,
+    secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+    sameSite: "lax",
   });
   res.status(204).end();
 };

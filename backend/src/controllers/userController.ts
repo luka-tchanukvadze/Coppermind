@@ -99,8 +99,14 @@ export const deleteMe = catchAsync(
       data: { active: false },
     });
 
-    // sign them out too - otherwise the cookie stays and frontend middleware bounces to /feed
-    res.cookie("jwt", "", { expires: new Date(0), httpOnly: true });
+    // sign them out too - otherwise the cookie stays and frontend middleware bounces to /feed.
+    // flags mirror createSendToken so the clear actually overrides the original
+    res.cookie("jwt", "", {
+      expires: new Date(0),
+      httpOnly: true,
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+      sameSite: "lax",
+    });
     res.status(204).end();
   },
 );
