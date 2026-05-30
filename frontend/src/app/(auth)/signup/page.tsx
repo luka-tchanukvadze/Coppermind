@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ function SignupContent() {
   const returnUrl = searchParams.get("returnUrl");
   const router = useRouter();
   const signup = useSignup();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -38,6 +40,9 @@ function SignupContent() {
   const onValid = (data: SignupInput) => {
     signup.mutate(data, {
       onSuccess: () => {
+        // start the new account from a clean cache (in case the tab held a
+        // prior session's data)
+        queryClient.clear();
         router.push(
           returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
             ? returnUrl

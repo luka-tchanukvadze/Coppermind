@@ -45,11 +45,15 @@ export function SettingsShell() {
 
   const handleLogout = () => {
     logout.mutate(undefined, {
-      onSuccess: () => {
+      onError: (err) => toast.error(err.message),
+      // tear down locally no matter what. even if the request failed the user
+      // asked to leave, so clear the cache and bounce to the landing page. a
+      // failed logout just means the cookie may still be valid - the next
+      // protected call will 401 and the cache is already gone
+      onSettled: () => {
         queryClient.clear();
         router.push("/");
       },
-      onError: (err) => toast.error(err.message),
     });
   };
 

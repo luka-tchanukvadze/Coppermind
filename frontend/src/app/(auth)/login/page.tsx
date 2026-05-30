@@ -39,7 +39,11 @@ function LoginContent() {
   const handleLogin = (data: LoginInput) => {
     login.mutate(data, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["me"] });
+        // wipe any prior account's cached data before entering the app. login
+        // reuses the tab's single QueryClient, so without this a previous
+        // user's feed/chats/shelf (and their name in the sidebar) can flash
+        // until each query refetches
+        queryClient.clear();
         router.push(
           returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
             ? returnUrl

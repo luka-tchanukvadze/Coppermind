@@ -107,6 +107,10 @@ export default function ChatRoomPage() {
     const clientMessageId = crypto.randomUUID();
     const optimistic: Message = {
       id: clientMessageId,
+      // stamp clientMessageId == id so the bubble knows this row is still
+      // optimistic (unsend stays hidden until the server swap gives it a real
+      // id). the socket dedupe still finds it by id == clientMessageId
+      clientMessageId,
       text: trimmed,
       createdAt: new Date().toISOString(),
       userId: me.id,
