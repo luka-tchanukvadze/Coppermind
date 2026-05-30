@@ -17,6 +17,11 @@ export function AvatarPicker({ defaultValue = "windrunners.svg", onChange, size 
   const [selected, setSelected] = useState<string>(defaultValue);
   const tileSize = size === "sm" ? { cls: "w-10 h-10", px: 40 } : size === "lg" ? { cls: "w-16 h-16", px: 64 } : { cls: "w-12 h-12", px: 48 };
 
+  // persistent caption for the picked order. tooltips only show on hover, so on
+  // touch the name would just flash on tap - this keeps it visible until you
+  // choose another
+  const selectedOption = AVATAR_OPTIONS.find((o) => o.filename === selected);
+
   return (
     <div className="space-y-3">
       {label && <div className="text-sm font-medium text-ink">{label}</div>}
@@ -60,6 +65,13 @@ export function AvatarPicker({ defaultValue = "windrunners.svg", onChange, size 
           );
         })}
       </div>
+      {selectedOption && (
+        <p className="text-xs text-muted">
+          <span className="font-medium text-ink">{selectedOption.name}</span>
+          {" · "}
+          {selectedOption.attributes}
+        </p>
+      )}
     </div>
   );
 }

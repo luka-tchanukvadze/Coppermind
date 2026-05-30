@@ -29,7 +29,7 @@ export function MobileNav() {
   return (
     <>
       <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
-        <Wordmark className="text-xl" />
+        <Wordmark href="/feed" className="text-xl" />
         <button
           type="button"
           onClick={() => setOpen(true)}

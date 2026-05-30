@@ -69,7 +69,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full w-65 shrink-0 flex-col border-r bg-surface/60">
       <div className="px-6 pt-7 pb-5">
-        <Wordmark />
+        <Wordmark href="/feed" />
       </div>
 
       <nav className="flex-1 px-3">
