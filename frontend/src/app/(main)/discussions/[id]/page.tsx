@@ -2,6 +2,7 @@
 
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { ArrowLeft, MessageCircle, Share2 } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
 import { BookCover } from "@/components/shared/book-cover";
@@ -41,6 +42,26 @@ export default function DiscussionDetailPage() {
   const isOwnDiscussion = d.creatorId === me?.id;
   const isAdmin = me?.role === "admin";
 
+  // native share sheet on mobile, copy-link fallback elsewhere. swallow the
+  // reject navigator.share throws when the user dismisses the sheet
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: d.title, url });
+      } catch {
+        // user cancelled - nothing to do
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied. Share it with a friend.");
+    } catch {
+      toast.error("Couldn't copy the link");
+    }
+  };
+
   return (
     <>
       <div className="mb-6">
@@ -79,7 +100,11 @@ export default function DiscussionDetailPage() {
               href={`/books/${d.book.id}`}
               className="mt-6 flex items-center gap-3 rounded-md border bg-surface p-3 transition-colors hover:border-border-strong"
             >
-              <BookCover coverImage={d.book.coverImage} title={d.book.title} size="sm" />
+              <BookCover
+                coverImage={d.book.coverImage}
+                title={d.book.title}
+                size="sm"
+              />
               <div className="min-w-0 flex-1">
                 <div className="text-[11px] uppercase tracking-widest text-muted">
                   About this book
@@ -87,7 +112,9 @@ export default function DiscussionDetailPage() {
                 <div className="mt-0.5 truncate font-serif text-base font-medium text-ink">
                   {d.book.title}
                 </div>
-                <div className="truncate text-xs italic text-muted">{d.book.author}</div>
+                <div className="truncate text-xs italic text-muted">
+                  {d.book.author}
+                </div>
               </div>
             </Link>
           )}
@@ -108,7 +135,12 @@ export default function DiscussionDetailPage() {
           <Button variant="ghost" size="sm" className="gap-1.5">
             <MessageCircle className="h-4 w-4" /> {commentCount} replies
           </Button>
-          <Button variant="ghost" size="sm" className="ml-auto gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto gap-1.5"
+            onClick={handleShare}
+          >
             <Share2 className="h-4 w-4" /> Share
           </Button>
         </footer>
@@ -123,13 +155,22 @@ export default function DiscussionDetailPage() {
               const isOwnComment = c.userId === me?.id;
               return (
                 <li key={c.id} className="flex gap-3">
-                  <UserPic photo={c.user.photo} name={c.user.name} size="sm" className="mt-0.5" />
+                  <UserPic
+                    photo={c.user.photo}
+                    name={c.user.name}
+                    size="sm"
+                    className="mt-0.5"
+                  />
                   <div className="min-w-0 flex-1 rounded-md border bg-surface p-4">
                     <header className="mb-1.5 flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-ink">{c.user.name}</span>
+                        <span className="font-medium text-ink">
+                          {c.user.name}
+                        </span>
                         <span className="text-muted">·</span>
-                        <span className="text-muted">{formatRelative(c.createdAt)}</span>
+                        <span className="text-muted">
+                          {formatRelative(c.createdAt)}
+                        </span>
                       </div>
                       {(isOwnComment || isAdmin) && (
                         <DiscussionActionsMenu
@@ -140,7 +181,9 @@ export default function DiscussionDetailPage() {
                         />
                       )}
                     </header>
-                    <p className="wrap-break-word text-sm leading-relaxed text-ink/90">{c.content}</p>
+                    <p className="wrap-break-word text-sm leading-relaxed text-ink/90">
+                      {c.content}
+                    </p>
                   </div>
                 </li>
               );
