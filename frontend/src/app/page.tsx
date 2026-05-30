@@ -35,7 +35,7 @@ function LandingContent() {
 
   return (
     <div className="paper min-h-screen">
-      <header className="flex items-center justify-between px-8 py-6">
+      <header className="flex items-center justify-between px-5 py-6 sm:px-8">
         <Wordmark />
         <nav className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
@@ -62,13 +62,13 @@ function LandingContent() {
           friends who actually read. A calmer reading app - no ratings race, no
           algorithm.
         </p>
-        <div className="mt-10 flex items-center justify-center gap-3">
-          <Button asChild size="lg">
+        <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Button asChild size="lg" className="w-full sm:w-auto">
             <Link href={signupHref}>
               Start reading <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="ghost">
+          <Button asChild size="lg" variant="ghost" className="w-full sm:w-auto">
             <Link href={loginHref}>I have an account</Link>
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,15 @@ export const metadata: Metadata = {
   title: "Coppermind - Your private library",
   description:
     "Track your reading, keep your thoughts with the book, and talk books with friends who actually read them.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // shrink the layout viewport (and dvh units) when the on-screen keyboard
+  // opens, so the chat input rides above it and the header stays put instead
+  // of being scrolled off the top
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

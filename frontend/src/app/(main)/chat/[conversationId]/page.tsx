@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Send, Smile } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 import { UserPic } from "@/components/shared/user-pic";
 import { OnlineDot } from "@/components/shared/online-dot";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatThreadSkeleton } from "@/components/chat/chat-skeleton";
+import { EmojiButton } from "@/components/chat/emoji-button";
 import { cn } from "@/lib/utils";
 import { useTypingFor } from "@/lib/presence/presence-provider";
 import {
@@ -125,7 +126,7 @@ export default function ChatRoomPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex items-center gap-3 border-b bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
+      <header className="flex shrink-0 items-center gap-3 border-b bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
         <Link
           href="/chat"
           aria-label="Back to conversations"
@@ -182,7 +183,7 @@ export default function ChatRoomPage() {
         </div>
       </div>
 
-      <footer className="border-t bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
+      <footer className="shrink-0 border-t bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -190,15 +191,7 @@ export default function ChatRoomPage() {
           }}
           className="mx-auto flex max-w-2xl items-center gap-2"
         >
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Insert emoji"
-            className="hidden sm:flex"
-          >
-            <Smile className="h-4 w-4" />
-          </Button>
+          <EmojiButton onPick={(emoji) => setText((t) => t + emoji)} />
           <Input
             value={text}
             onChange={(e) => {

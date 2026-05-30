@@ -3,11 +3,12 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, notFound } from "next/navigation";
-import { ArrowLeft, Send, Smile } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 import { UserPic } from "@/components/shared/user-pic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmojiButton } from "@/components/chat/emoji-button";
 import { useConversations, useSendMessage } from "@/lib/api/conversations";
 import { useUser } from "@/lib/api/users";
 
@@ -58,7 +59,7 @@ function NewChatContent() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex items-center gap-3 border-b bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
+      <header className="flex shrink-0 items-center gap-3 border-b bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
         <Link
           href="/chat"
           aria-label="Back to conversations"
@@ -78,7 +79,7 @@ function NewChatContent() {
           : `Say hi to ${friend?.name?.split(" ")[0] ?? "your friend"}.`}
       </div>
 
-      <footer className="border-t bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
+      <footer className="shrink-0 border-t bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -86,15 +87,7 @@ function NewChatContent() {
           }}
           className="mx-auto flex max-w-2xl items-center gap-2"
         >
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Insert emoji"
-            className="hidden sm:flex"
-          >
-            <Smile className="h-4 w-4" />
-          </Button>
+          <EmojiButton onPick={(emoji) => setText((t) => t + emoji)} />
           <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
