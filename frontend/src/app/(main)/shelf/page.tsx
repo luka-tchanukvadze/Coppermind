@@ -123,7 +123,10 @@ export default function ShelfPage() {
       />
 
       <Tabs defaultValue="all">
-        <TabsList>
+        {/* wrap to rows on mobile instead of side-scrolling. drop the shared
+            baseline there so the active-tab underline still reads right;
+            desktop keeps the single-row underlined strip */}
+        <TabsList className="flex-wrap gap-y-1 border-b-0 sm:flex-nowrap sm:border-b">
           <TabsTrigger value="all">All ({byStatus.all.length})</TabsTrigger>
           <TabsTrigger value="want">
             Want to read ({byStatus.want.length})

@@ -15,6 +15,10 @@ const ALL = "All";
 
 const PAGE_SIZE = 30;
 
+// show this many genre chips before collapsing behind a "show all" toggle.
+// keeps the filter row short on mobile when the catalog has lots of genres
+const GENRE_COLLAPSE_AT = 16;
+
 export default function BooksPage() {
   return (
     <Suspense fallback={null}>
@@ -29,6 +33,7 @@ function BooksContent() {
 
   const [query, setQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string>(ALL);
+  const [showAllGenres, setShowAllGenres] = useState(false);
 
   const isSearching = query.trim().length > 2;
 
@@ -58,6 +63,16 @@ function BooksContent() {
     PAGE_SIZE,
     selectedGenre === ALL ? undefined : selectedGenre,
   );
+
+  // collapse the genre list once it gets long. collapsed view shows the first
+  // GENRE_COLLAPSE_AT chips + a toggle revealing the rest
+  const genres = genreData?.genres ?? [];
+  const genresCollapsible = genres.length > GENRE_COLLAPSE_AT;
+  const shownGenres =
+    genresCollapsible && !showAllGenres
+      ? genres.slice(0, GENRE_COLLAPSE_AT)
+      : genres;
+  const hiddenGenreCount = genres.length - shownGenres.length;
 
   return (
     <>
@@ -96,7 +111,7 @@ function BooksContent() {
             active={selectedGenre === ALL}
             onClick={() => handleGenreSelect(ALL)}
           />
-          {genreData.genres.map(({ genre, count }) => (
+          {shownGenres.map(({ genre, count }) => (
             <GenreChip
               key={genre}
               label={`${genre} (${count})`}
@@ -104,6 +119,15 @@ function BooksContent() {
               onClick={() => handleGenreSelect(genre)}
             />
           ))}
+          {genresCollapsible && (
+            <button
+              type="button"
+              onClick={() => setShowAllGenres((v) => !v)}
+              className="rounded-full px-3 py-1.5 text-xs font-medium text-accent hover:underline"
+            >
+              {showAllGenres ? "Show less" : `Show all (+${hiddenGenreCount})`}
+            </button>
+          )}
         </div>
       )}
 

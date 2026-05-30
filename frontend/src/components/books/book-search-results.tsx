@@ -24,15 +24,17 @@ export function BookSearchResults({ query }: BookSearchResultsProps) {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-start gap-4 rounded-lg border bg-surface p-4"
+            className="flex flex-col gap-4 rounded-lg border bg-surface p-4 sm:flex-row sm:items-start"
           >
-            <Skeleton className="aspect-2/3 w-13 shrink-0" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/3" />
-              <Skeleton className="h-3 w-1/4" />
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <Skeleton className="aspect-2/3 w-13 shrink-0" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
             </div>
-            <Skeleton className="h-9 w-48 shrink-0" />
+            <Skeleton className="h-9 w-full sm:w-44 sm:shrink-0" />
           </div>
         ))}
       </div>
@@ -70,32 +72,36 @@ export function BookSearchResults({ query }: BookSearchResultsProps) {
         {books.map((book) => (
           <div
             key={book.externalApiId}
-            className="flex items-start gap-4 rounded-lg border bg-surface p-4"
+            className="flex flex-col gap-4 rounded-lg border bg-surface p-4 sm:flex-row sm:items-start"
           >
-            <BookCover
-              coverImage={book.coverImage}
-              title={book.title}
-              author={book.author}
-              size="sm"
-            />
+            {/* cover + info share a row. on mobile the button below gets the
+                full width so the title isn't squeezed into a thin column */}
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <BookCover
+                coverImage={book.coverImage}
+                title={book.title}
+                author={book.author}
+                size="sm"
+              />
 
-            <div className="min-w-0 flex-1">
-              <h3 className="line-clamp-2 font-serif text-base font-medium text-ink">
-                {book.title}
-              </h3>
-              <p className="text-sm italic text-muted">{book.author}</p>
-              {book.genres.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {book.genres.slice(0, 2).map((g) => (
-                    <Badge key={g} variant="muted" className="text-[10px]">
-                      {g}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              <div className="min-w-0 flex-1">
+                <h3 className="line-clamp-2 font-serif text-base font-medium text-ink">
+                  {book.title}
+                </h3>
+                <p className="text-sm italic text-muted">{book.author}</p>
+                {book.genres.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {book.genres.slice(0, 2).map((g) => (
+                      <Badge key={g} variant="muted" className="text-[10px]">
+                        {g}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="w-48 shrink-0">
+            <div className="w-full sm:w-44 sm:shrink-0">
               <AddToShelfButton book={book} />
             </div>
           </div>

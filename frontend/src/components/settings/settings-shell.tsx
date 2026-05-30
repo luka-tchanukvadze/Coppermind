@@ -56,7 +56,7 @@ export function SettingsShell() {
   return (
     <div className="grid gap-6 md:grid-cols-[200px_minmax(0,1fr)] md:gap-10">
       <nav className="md:sticky md:top-10 md:self-start">
-        <ul className="flex gap-1 overflow-x-auto md:flex-col md:space-y-0.5 md:gap-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap md:space-y-0.5 md:gap-0">
           {SECTIONS.map((s) => {
             const Icon = s.icon;
             const active = section === s.id;
