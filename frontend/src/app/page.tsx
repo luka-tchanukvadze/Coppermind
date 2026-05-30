@@ -68,7 +68,12 @@ function LandingContent() {
               Start reading <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="ghost" className="w-full sm:w-auto">
+          <Button
+            asChild
+            size="lg"
+            variant="ghost"
+            className="w-full sm:w-auto"
+          >
             <Link href={loginHref}>I have an account</Link>
           </Button>
         </div>
@@ -184,16 +189,23 @@ function LandingContent() {
             <Wordmark className="text-lg" />
           </div>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-ink">
-              About
+            <a
+              href="https://github.com/luka-tchanukvadze"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink"
+            >
+              GitHub
             </a>
-            <a href="#" className="hover:text-ink">
-              Privacy
+            <a
+              href="https://www.linkedin.com/in/luka-tchanukvadze"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink"
+            >
+              LinkedIn
             </a>
-            <a href="#" className="hover:text-ink">
-              Contact
-            </a>
-            <span>© 2026</span>
+            <span>© {new Date().getFullYear()} Coppermind</span>
           </div>
         </div>
       </footer>
