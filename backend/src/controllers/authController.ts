@@ -81,6 +81,10 @@ const createSendToken = (
     httpOnly: true,
     secure: req.secure || req.headers["x-forwarded-proto"] === "https",
     sameSite: "lax",
+    // prod sets COOKIE_DOMAIN to the parent domain so the cookie reaches both
+    // the frontend host (read by the next middleware) and the backend subdomain.
+    // unset in dev -> host-only, correct for localhost
+    domain: process.env.COOKIE_DOMAIN || undefined,
   });
 
   const safeUser = {
@@ -182,6 +186,7 @@ export const logout = (req: Request, res: Response) => {
     httpOnly: true,
     secure: req.secure || req.headers["x-forwarded-proto"] === "https",
     sameSite: "lax",
+    domain: process.env.COOKIE_DOMAIN || undefined,
   });
   res.status(204).end();
 };

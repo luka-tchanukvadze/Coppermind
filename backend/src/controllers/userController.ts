@@ -106,6 +106,7 @@ export const deleteMe = catchAsync(
       httpOnly: true,
       secure: req.secure || req.headers["x-forwarded-proto"] === "https",
       sameSite: "lax",
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
     res.status(204).end();
   },
