@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -47,7 +47,7 @@ export default function ChatRoomPage() {
   const sendMessage = useSendMessage();
 
   const [text, setText] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   const messages = conversation?.messages ?? [];
   const other = conversation?.participants[0]?.user;
@@ -55,10 +55,25 @@ export default function ChatRoomPage() {
   // and is a no-op while the conversation is still loading
   const { isTyping, notifyTyping, stopTyping } = useTypingFor(other?.id);
 
-  // scroll to newest whenever the count changes (open thread + incoming)
+  // pin the list to the bottom. scroll the container directly instead of
+  // scrollIntoView so it can never tug the window. runs on new messages and
+  // on viewport resize - the mobile keyboard shrinks the viewport and would
+  // otherwise leave the newest message stuck behind the input
+  const scrollToBottom = useCallback(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView();
-  }, [messages.length]);
+    scrollToBottom();
+  }, [messages.length, scrollToBottom]);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    vv.addEventListener("resize", scrollToBottom);
+    return () => vv.removeEventListener("resize", scrollToBottom);
+  }, [scrollToBottom]);
 
   if (isLoading) {
     return <ChatThreadSkeleton />;
@@ -150,7 +165,10 @@ export default function ChatRoomPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div
+        ref={scrollerRef}
+        className="flex-1 overflow-y-auto overscroll-contain px-6 py-6"
+      >
         <div className="mx-auto max-w-2xl space-y-5">
           {groups.map((g, i) => {
             const isMe = g.userId === me?.id;
@@ -179,7 +197,6 @@ export default function ChatRoomPage() {
               </div>
             );
           })}
-          <div ref={bottomRef} />
         </div>
       </div>
 
