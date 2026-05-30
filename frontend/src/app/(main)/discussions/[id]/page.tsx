@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -19,6 +20,13 @@ export default function DiscussionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: d, isLoading, error } = useDiscussion(id);
   const { data: me } = useMe();
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+
+  // jump to the reply box and focus it - used by the "X replies" button
+  const focusReply = () => {
+    replyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    replyRef.current?.focus({ preventScroll: true });
+  };
 
   if (isLoading) {
     return (
@@ -132,7 +140,12 @@ export default function DiscussionDetailPage() {
             initialCount={d.likeCount}
             initialLiked={d.likedByMe}
           />
-          <Button variant="ghost" size="sm" className="gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
+            onClick={focusReply}
+          >
             <MessageCircle className="h-4 w-4" /> {commentCount} replies
           </Button>
           <Button
@@ -191,7 +204,7 @@ export default function DiscussionDetailPage() {
           </ul>
 
           <div className="mt-10">
-            <ReplyComposer discussionId={d.id} />
+            <ReplyComposer discussionId={d.id} textareaRef={replyRef} />
           </div>
         </section>
       </article>
