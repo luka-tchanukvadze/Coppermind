@@ -28,6 +28,40 @@ function TabPanelMessage({ children }: { children: React.ReactNode }) {
   );
 }
 
+// mirrors the real two-column detail layout so it doesn't jump on load. cover
+// is centered on mobile (mx-auto), left-aligned in its column on md+ - matches
+// the actual page instead of a lone left-stuck box
+function BookDetailSkeleton() {
+  return (
+    <div className="grid gap-8 pb-10 md:grid-cols-[320px_minmax(0,1fr)] md:gap-10">
+      <div className="mx-auto w-full max-w-65 md:mx-0 md:max-w-none">
+        <Skeleton className="aspect-2/3 w-full" />
+        <Skeleton className="mt-4 h-10 w-full" />
+      </div>
+      <div className="min-w-0 pt-2">
+        <Skeleton className="h-9 w-3/4 sm:h-11" />
+        <Skeleton className="mt-3 h-5 w-1/3" />
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-14" />
+        </div>
+        <div className="mt-10 border-t pt-10">
+          <div className="flex gap-6">
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-28" />
+          </div>
+          <div className="mt-6 space-y-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: book, isLoading, error } = useBook(id);
@@ -41,7 +75,7 @@ export default function BookDetailPage() {
     error: discussionsError,
   } = useBookDiscussions(id);
 
-  if (isLoading) return <Skeleton className="aspect-2/3 w-65" />;
+  if (isLoading) return <BookDetailSkeleton />;
   if (error && error instanceof ApiError && error.status === 404) notFound();
   if (error)
     return (

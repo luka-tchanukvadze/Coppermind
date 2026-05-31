@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { LikeButton } from "@/components/discussions/like-button";
 import { DiscussionActionsMenu } from "@/components/discussions/discussion-actions-menu";
 import { ReplyComposer } from "@/components/discussions/reply-composer";
+import { DiscussionDetailSkeleton } from "@/components/discussions/discussions-skeleton";
 import { useDiscussion } from "@/lib/api/discussions";
 import { useMe } from "@/lib/api/users";
 import { ApiError } from "@/lib/api/client";
@@ -29,11 +30,7 @@ export default function DiscussionDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="rounded-lg border bg-surface p-8 text-center text-sm text-muted">
-        Loading...
-      </div>
-    );
+    return <DiscussionDetailSkeleton />;
   }
 
   if (error instanceof ApiError && error.status === 404) notFound();
