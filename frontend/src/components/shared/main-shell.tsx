@@ -29,11 +29,16 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   }, [isChat]);
 
   if (isChat) {
-    // h-dvh + flex col: MobileNav takes its natural height, the chat layout
-    // (flex-1) fills the exact remaining space. overflow-hidden clips any
-    // sub-pixel spill so it can never leak into a document scroll.
+    // On mobile the shell is fixed to the viewport. Two reasons: (1) a fixed
+    // box is sized to the layout viewport, which shrinks with the keyboard via
+    // interactiveWidget, so header + list + input always fit and nothing
+    // overflows. (2) fixed elements don't add to document scroll height and
+    // can't be programmatically scrolled - so when the input is focused the
+    // browser can't scroll the shell to follow it, which was pushing the top
+    // nav out of view with no way to get it back. Desktop reverts to a normal
+    // h-dvh flex child of the sidebar row.
     return (
-      <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="fixed inset-0 flex flex-col overflow-hidden bg-background md:static md:inset-auto md:h-dvh md:min-w-0 md:flex-1">
         <MobileNav />
         {children}
       </main>

@@ -101,7 +101,7 @@ export function NewEntryDialog({ userBookId }: NewEntryDialogProps) {
             <Textarea
               id="content"
               rows={8}
-              placeholder="Write freely. Markdown-style line breaks render as paragraphs."
+              placeholder="Write anything you want to remember. It's saved here for you."
               {...register("content")}
             />
             {errors.content && (
