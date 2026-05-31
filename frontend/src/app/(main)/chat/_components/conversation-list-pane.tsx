@@ -84,22 +84,21 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                     {other?.id && <OnlineDot userId={other.id} />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={cn("truncate font-medium", isActive ? "text-accent" : "text-ink")}>
-                        {other?.name}
-                      </span>
-                      {lastMessage && (
-                        <span className="shrink-0 text-[11px] text-muted">
-                          {formatRelative(lastMessage.createdAt)}
-                        </span>
-                      )}
-                    </div>
+                    <span className={cn("block truncate font-medium", isActive ? "text-accent" : "text-ink")}>
+                      {other?.name}
+                    </span>
+                    {/* timestamp leads the preview so it reads as "when the
+                        last message was sent", not an ambiguous bare time */}
                     <p className="mt-0.5 truncate text-xs text-muted">
-                      {lastMessage
-                        ? isMine
-                          ? `You: ${lastMessage.text}`
-                          : lastMessage.text
-                        : "No messages yet."}
+                      {lastMessage ? (
+                        <>
+                          <span>{formatRelative(lastMessage.createdAt)}</span>
+                          {" · "}
+                          {isMine ? `You: ${lastMessage.text}` : lastMessage.text}
+                        </>
+                      ) : (
+                        "No messages yet."
+                      )}
                     </p>
                   </div>
                 </Link>
