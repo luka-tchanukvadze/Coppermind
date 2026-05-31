@@ -86,14 +86,24 @@ export function EditEntryDialog({
         <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
           <div className="space-y-1.5">
             <Label htmlFor="entry-title">Title</Label>
-            <Input id="entry-title" maxLength={255} {...register("title")} />
+            <Input
+              id="entry-title"
+              placeholder="A line that names this thought"
+              maxLength={255}
+              {...register("title")}
+            />
             {errors.title && (
               <p className="text-xs text-error">{errors.title.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="entry-content">Content</Label>
-            <Textarea id="entry-content" rows={8} {...register("content")} />
+            <Textarea
+              id="entry-content"
+              rows={8}
+              placeholder="Write anything you want to remember. It's saved here for you."
+              {...register("content")}
+            />
             {errors.content && (
               <p className="text-xs text-error">{errors.content.message}</p>
             )}

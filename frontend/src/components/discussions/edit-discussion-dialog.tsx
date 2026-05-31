@@ -82,7 +82,12 @@ export function EditDiscussionDialog({
         <form className="space-y-4" onSubmit={handleSubmit(onValid)}>
           <div className="space-y-1.5">
             <Label htmlFor="discussion-title">Title</Label>
-            <Input id="discussion-title" maxLength={255} {...register("title")} />
+            <Input
+              id="discussion-title"
+              placeholder="What are you wondering about?"
+              maxLength={255}
+              {...register("title")}
+            />
             {errors.title && (
               <p className="text-xs text-error">{errors.title.message}</p>
             )}
@@ -92,6 +97,7 @@ export function EditDiscussionDialog({
             <Textarea
               id="discussion-description"
               rows={6}
+              placeholder="Set the scene. The first paragraph is what people see in the feed."
               {...register("description")}
             />
             {errors.description && (

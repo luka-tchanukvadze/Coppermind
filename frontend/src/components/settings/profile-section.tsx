@@ -70,7 +70,12 @@ export function ProfileSection({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="name">Display name</Label>
-            <Input id="name" className="max-w-md" {...register("name")} />
+            <Input
+              id="name"
+              className="max-w-md"
+              placeholder="Your name"
+              {...register("name")}
+            />
             {errors.name && (
               <p className="text-xs text-error">{errors.name.message}</p>
             )}
