@@ -34,6 +34,8 @@ export type ConversationPreview = {
   createdAt: string;
   participants: Participant[];
   messages: Message[]; // length 0 or 1 (last message only)
+  // messages from the other person since my lastReadAt. 0 = caught up
+  unreadCount: number;
 };
 
 // detail view: other participant + ALL messages (asc), each with .user
@@ -78,6 +80,10 @@ async function unsendMessageRequest(input: UnsendMessageInput) {
   return apiClient.delete(
     `/messages/${input.conversationId}/${input.messageId}`,
   );
+}
+
+async function markConversationReadRequest(conversationId: string) {
+  return apiClient.patch(`/messages/${conversationId}/read`);
 }
 
 function useConversations() {
@@ -125,4 +131,36 @@ function useUnsendMessage() {
   });
 }
 
-export { useConversations, useConversation, useSendMessage, useUnsendMessage };
+function useMarkConversationRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: markConversationReadRequest,
+    onSuccess: (_data, conversationId) => {
+      // zero this conversation's badge locally - no refetch needed
+      queryClient.setQueryData<ConversationPreview[]>(
+        ["conversations"],
+        (old) =>
+          old?.map((c) =>
+            c.id === conversationId ? { ...c, unreadCount: 0 } : c,
+          ),
+      );
+    },
+  });
+}
+
+// total unread across all conversations, for the nav badge. reads the same
+// cached ["conversations"] query every consumer shares, so no extra fetch
+function useUnreadTotal(): number {
+  const { data } = useConversations();
+  return (data ?? []).reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
+}
+
+export {
+  useConversations,
+  useConversation,
+  useSendMessage,
+  useUnsendMessage,
+  useMarkConversationRead,
+  useUnreadTotal,
+};

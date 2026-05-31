@@ -135,6 +135,10 @@ model ConversationParticipant {
   user            User         @relation(fields: [userId], references: [id])
   conversationId  String
   conversation    Conversation @relation(fields: [conversationId], references: [id])
+  // bumped to now() whenever this participant opens the thread. unread =
+  // messages from the other person with createdAt > lastReadAt. null = never
+  // opened, so every message from the other side counts as unread
+  lastReadAt      DateTime?
 
   @@unique([userId, conversationId])
   @@index([conversationId])

@@ -5,10 +5,14 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Wordmark } from "./wordmark";
 import { SidebarNav } from "./sidebar-nav";
+import { useUnreadTotal } from "@/lib/api/conversations";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // the nav lives in the drawer on mobile, so surface a dot on the burger
+  // itself when there's unread - otherwise it'd be hidden until you open it
+  const unreadTotal = useUnreadTotal();
 
   // Auto-close the drawer when the user navigates (otherwise it stays open
   // over the new page until they manually close it).
@@ -33,10 +37,13 @@ export function MobileNav() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className="flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-muted-bg"
+          aria-label={unreadTotal > 0 ? "Open menu (unread messages)" : "Open menu"}
+          className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-muted-bg"
         >
           <Menu className="h-5 w-5" />
+          {unreadTotal > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-error ring-2 ring-surface" />
+          )}
         </button>
       </header>
 

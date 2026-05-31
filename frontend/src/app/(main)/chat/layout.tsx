@@ -3,14 +3,14 @@
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ConversationListPane } from "./_components/conversation-list-pane";
-import { useNewMessageSubscription } from "@/lib/socket/use-new-message-subscription";
 
 export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  useNewMessageSubscription();
+  // newMessage subscription is mounted app-wide in MainShell, not here, so
+  // unread badges update even when you're not on a chat route
   const pathname = usePathname();
   // On mobile we show ONE pane at a time: list at /chat, room at /chat/[id].
   // On desktop both are always visible.

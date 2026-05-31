@@ -19,6 +19,7 @@ import { useTypingFor } from "@/lib/presence/presence-provider";
 import {
   useConversation,
   useSendMessage,
+  useMarkConversationRead,
   type ConversationDetail,
   type Message,
 } from "@/lib/api/conversations";
@@ -41,10 +42,15 @@ function groupConsecutive(messages: Message[]): MessageGroup[] {
 
 export default function ChatRoomPage() {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { data: conversation, isLoading, error } = useConversation(conversationId);
+  const {
+    data: conversation,
+    isLoading,
+    error,
+  } = useConversation(conversationId);
   const { data: me } = useMe();
   const queryClient = useQueryClient();
   const sendMessage = useSendMessage();
+  const markRead = useMarkConversationRead();
 
   const [text, setText] = useState("");
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -74,6 +80,17 @@ export default function ChatRoomPage() {
     vv.addEventListener("resize", scrollToBottom);
     return () => vv.removeEventListener("resize", scrollToBottom);
   }, [scrollToBottom]);
+
+  // mark read on open and whenever a new message lands while I'm viewing.
+  // keyed on conversationId + count only (not the conversation object ref,
+  // which changes on every cache patch) so I don't fire a redundant PATCH on
+  // the optimistic->real id swap. guard on hasConversation so it waits for the
+  // first load. mutate is referentially stable
+  const hasConversation = !!conversation;
+  useEffect(() => {
+    if (hasConversation) markRead.mutate(conversationId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, messages.length, hasConversation]);
 
   if (isLoading) {
     return <ChatThreadSkeleton />;
@@ -119,7 +136,8 @@ export default function ChatRoomPage() {
     };
     queryClient.setQueryData<ConversationDetail>(
       ["conversation", conversationId],
-      (old) => (old ? { ...old, messages: [...old.messages, optimistic] } : old),
+      (old) =>
+        old ? { ...old, messages: [...old.messages, optimistic] } : old,
     );
 
     sendMessage.mutate(
@@ -133,7 +151,9 @@ export default function ChatRoomPage() {
               old
                 ? {
                     ...old,
-                    messages: old.messages.filter((m) => m.id !== clientMessageId),
+                    messages: old.messages.filter(
+                      (m) => m.id !== clientMessageId,
+                    ),
                   }
                 : old,
           );
@@ -190,7 +210,12 @@ export default function ChatRoomPage() {
                     <div className="h-px flex-1 bg-border" />
                   </div>
                 )}
-                <div className={cn("flex flex-col gap-1", isMe ? "items-end" : "items-start")}>
+                <div
+                  className={cn(
+                    "flex flex-col gap-1",
+                    isMe ? "items-end" : "items-start",
+                  )}
+                >
                   {g.messages.map((m) => (
                     <MessageBubble key={m.id} message={m} isMe={isMe} />
                   ))}

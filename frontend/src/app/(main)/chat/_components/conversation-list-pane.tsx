@@ -70,6 +70,9 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
             const lastMessage = c.messages[0];
             const isMine = lastMessage?.userId === me?.id;
             const isActive = activeConvoId === c.id;
+            // viewing the thread marks it read, so never show unread on the
+            // active one (avoids a flash before mark-read resolves)
+            const hasUnread = c.unreadCount > 0 && !isActive;
             return (
               <li key={c.id}>
                 <Link
@@ -84,12 +87,24 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                     {other?.id && <OnlineDot userId={other.id} />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className={cn("block truncate font-medium", isActive ? "text-accent" : "text-ink")}>
+                    <span
+                      className={cn(
+                        "block truncate font-medium",
+                        isActive ? "text-accent" : "text-ink",
+                      )}
+                    >
                       {other?.name}
                     </span>
                     {/* timestamp leads the preview so it reads as "when the
                         last message was sent", not an ambiguous bare time */}
-                    <p className="mt-0.5 truncate text-xs text-muted">
+                    <p
+                      className={cn(
+                        "mt-0.5 truncate text-xs",
+                        // unread: darken + bold the preview so the row reads
+                        // as "new", matching the count badge
+                        hasUnread ? "font-medium text-ink" : "text-muted",
+                      )}
+                    >
                       {lastMessage ? (
                         <>
                           <span>{formatRelative(lastMessage.createdAt)}</span>
@@ -101,6 +116,11 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                       )}
                     </p>
                   </div>
+                  {hasUnread && (
+                    <span className="mt-1 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-error px-1.5 text-[11px] font-semibold text-white">
+                      {c.unreadCount > 9 ? "9+" : c.unreadCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

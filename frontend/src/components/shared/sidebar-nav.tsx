@@ -16,6 +16,7 @@ import { Wordmark } from "./wordmark";
 import { UserPic } from "./user-pic";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/lib/api/users";
+import { useUnreadTotal } from "@/lib/api/conversations";
 
 interface NavItem {
   href: string;
@@ -65,6 +66,7 @@ const NAV: NavItem[] = [
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: user, isLoading, error } = useMe();
+  const unreadTotal = useUnreadTotal();
 
   return (
     <div className="flex h-full w-65 shrink-0 flex-col border-r bg-surface/60">
@@ -79,6 +81,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               ? item.match(pathname)
               : pathname === item.href;
             const Icon = item.icon;
+            const showBadge = item.href === "/chat" && unreadTotal > 0;
             return (
               <li key={item.href}>
                 <Link
@@ -94,6 +97,11 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 >
                   <Icon className="h-4.5 w-4.5" strokeWidth={1.5} />
                   <span className="font-medium">{item.label}</span>
+                  {showBadge && (
+                    <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1.5 text-[11px] font-semibold text-white">
+                      {unreadTotal > 9 ? "9+" : unreadTotal}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

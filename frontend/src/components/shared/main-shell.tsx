@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { MobileNav } from "@/components/shared/mobile-nav";
+import { useNewMessageSubscription } from "@/lib/socket/use-new-message-subscription";
 
 // Wraps the authed app body. Chat needs a fixed full-height flex column (so the
 // message list scrolls while the header/input stay pinned), every other page
@@ -11,6 +12,10 @@ import { MobileNav } from "@/components/shared/mobile-nav";
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isChat = pathname.startsWith("/chat");
+
+  // app-wide so newMessage pushes update unread badges on every page, not
+  // just inside /chat
+  useNewMessageSubscription();
 
   // Lock the root scroller on chat routes. Without this, mobile browsers
   // retract the address bar by scrolling the document, and since the chat

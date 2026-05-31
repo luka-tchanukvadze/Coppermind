@@ -83,7 +83,7 @@ export const getConversations = catchAsync(
     const userId = req.user!.id;
 
     // Find conversations where logged-in user is a participant
-    const conversation = await prisma.conversation.findMany({
+    const conversations = await prisma.conversation.findMany({
       where: { participants: { some: { userId } } },
       include: {
         // Get only the other person's info - exclude yourself from participants
@@ -110,6 +110,42 @@ export const getConversations = catchAsync(
       orderBy: { createdAt: "desc" },
     });
 
+    // My lastReadAt per conversation. Separate query because Prisma can't
+    // include my own participant alongside the filtered "other" one in a
+    // single relation include. Indexed on (userId, conversationId).
+    const myParts = await prisma.conversationParticipant.findMany({
+      where: { userId, conversationId: { in: conversations.map((c) => c.id) } },
+      select: { conversationId: true, lastReadAt: true },
+    });
+    const lastReadMap = new Map(
+      myParts.map((p) => [p.conversationId, p.lastReadAt]),
+    );
+
+    // Unread = messages from the OTHER person newer than my lastReadAt. The
+    // cutoff differs per conversation, so it's one groupBy with an OR clause
+    // each - a single round trip, and every clause hits the
+    // (conversationId, createdAt) index. epoch fallback = never-read.
+    const orClauses = conversations.map((c) => ({
+      conversationId: c.id,
+      userId: { not: userId },
+      createdAt: { gt: lastReadMap.get(c.id) ?? new Date(0) },
+    }));
+    const grouped = orClauses.length
+      ? await prisma.message.groupBy({
+          by: ["conversationId"],
+          where: { OR: orClauses },
+          _count: { _all: true },
+        })
+      : [];
+    const unreadMap = new Map(
+      grouped.map((g) => [g.conversationId, g._count._all]),
+    );
+
+    const conversation = conversations.map((c) => ({
+      ...c,
+      unreadCount: unreadMap.get(c.id) ?? 0,
+    }));
+
     res.status(200).json({
       status: "success",
       results: conversation.length,
@@ -117,6 +153,26 @@ export const getConversations = catchAsync(
         conversation,
       },
     });
+  },
+);
+
+// Marks the thread read for the caller (lastReadAt = now). Clears only MY
+// unread badge - there are no read receipts, so the other person never learns
+// I read it. updateMany doubles as the participant check (count 0 = not mine).
+export const markConversationRead = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const conversationId = req.params.conversationId as string;
+
+    const result = await prisma.conversationParticipant.updateMany({
+      where: { conversationId, userId },
+      data: { lastReadAt: new Date() },
+    });
+
+    if (result.count === 0)
+      return next(new AppError("Conversation not found", 404));
+
+    res.status(204).end();
   },
 );
 
