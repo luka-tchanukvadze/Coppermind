@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Search, X } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -42,12 +44,13 @@ export default function ShelfPage() {
   const { data: shelf, isLoading, error } = useUserBooks(1, 100);
   const [sortKey, setSortKey] = useState<SortKey>("added");
   const [visibility, setVisibility] = useState<Visibility>("all");
+  const [query, setQuery] = useState("");
 
   // total shelf size stays stable - subtitle reads from the unfiltered list
   const totalShelfCount = shelf?.length ?? 0;
 
-  // sort first, then filter by visibility. status partition runs on the
-  // filtered set so tab counts reflect what's actually shown
+  // sort first, then filter by visibility. all runs on the already-loaded
+  // shelf - no extra fetch
   const sorted = useMemo(
     () => sortBooks(shelf ?? [], sortKey),
     [shelf, sortKey],
@@ -58,11 +61,23 @@ export default function ShelfPage() {
     return sorted;
   }, [sorted, visibility]);
 
+  // live text search over title + author. runs before the status partition so
+  // the tab counts reflect the search too
+  const searched = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return visible;
+    return visible.filter(
+      (b) =>
+        b.book.title.toLowerCase().includes(q) ||
+        b.book.author.toLowerCase().includes(q),
+    );
+  }, [visible, query]);
+
   const byStatus = {
-    all: visible,
-    want: visible.filter((b) => b.progress === "WANT_TO_READ"),
-    reading: visible.filter((b) => b.progress === "READING"),
-    read: visible.filter((b) => b.progress === "READ"),
+    all: searched,
+    want: searched.filter((b) => b.progress === "WANT_TO_READ"),
+    reading: searched.filter((b) => b.progress === "READING"),
+    read: searched.filter((b) => b.progress === "READ"),
   };
 
   if (isLoading) return <ShelfListSkeleton />;
@@ -94,6 +109,25 @@ export default function ShelfPage() {
         subtitle={`${totalShelfCount} books on your shelf.`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-56">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <Input
+                className="w-full pl-9 pr-9"
+                placeholder="Search your shelf..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {query.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <Select
               value={visibility}
               onValueChange={(v) => setVisibility(v as Visibility)}
