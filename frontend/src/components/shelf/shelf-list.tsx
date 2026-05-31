@@ -5,11 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { formatShortDate, progressLabel } from "@/lib/format";
 import type { UserBookWithBook } from "@/types/schema";
 
-export function ShelfList({ books }: { books: UserBookWithBook[] }) {
+export function ShelfList({
+  books,
+  emptyMessage = "Nothing here yet.",
+}: {
+  books: UserBookWithBook[];
+  // overridden when a search is active so the empty state reads as "no
+  // matches" rather than "empty shelf"
+  emptyMessage?: string;
+}) {
   if (books.length === 0) {
     return (
       <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted">
-        Nothing here yet.
+        {emptyMessage}
       </div>
     );
   }

@@ -80,6 +80,13 @@ export default function ShelfPage() {
     read: searched.filter((b) => b.progress === "READ"),
   };
 
+  // empty-state copy depends on whether a search is active - "no matches" vs
+  // the plain per-tab empty message
+  const isSearching = query.trim().length > 0;
+  const emptyMsg = isSearching
+    ? `No books matching "${query.trim()}".`
+    : "Nothing here yet.";
+
   if (isLoading) return <ShelfListSkeleton />;
 
   if (error) {
@@ -174,16 +181,16 @@ export default function ShelfPage() {
         </TabsList>
 
         <TabsContent value="all">
-          <ShelfList books={byStatus.all} />
+          <ShelfList books={byStatus.all} emptyMessage={emptyMsg} />
         </TabsContent>
         <TabsContent value="want">
-          <ShelfList books={byStatus.want} />
+          <ShelfList books={byStatus.want} emptyMessage={emptyMsg} />
         </TabsContent>
         <TabsContent value="reading">
-          <ShelfList books={byStatus.reading} />
+          <ShelfList books={byStatus.reading} emptyMessage={emptyMsg} />
         </TabsContent>
         <TabsContent value="read">
-          <ShelfList books={byStatus.read} />
+          <ShelfList books={byStatus.read} emptyMessage={emptyMsg} />
         </TabsContent>
       </Tabs>
     </>
