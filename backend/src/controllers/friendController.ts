@@ -149,6 +149,16 @@ export const getFriends = catchAsync(
       },
     });
 
+    // sort alphabetically by the OTHER person's name
+    // done in JS since the name lives on a relation that flips by direction
+    const otherName = (c: (typeof result)[number]) =>
+      (c.requesterId === userId ? c.addressee?.name : c.requester?.name) ?? "";
+    result.sort((a, b) =>
+      otherName(a).localeCompare(otherName(b), undefined, {
+        sensitivity: "base",
+      }),
+    );
+
     res.status(200).json({
       status: "success",
       results: result.length,

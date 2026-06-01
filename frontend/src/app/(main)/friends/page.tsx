@@ -32,6 +32,7 @@ export default function FriendsPage() {
   const { data: allUsers = [], isLoading: usersLoading } = useAllUsers();
   // keep ALL hooks above the meError early return - rules-of-hooks
   const [findQuery, setFindQuery] = useState("");
+  const [friendQuery, setFriendQuery] = useState("");
 
   // auth-fatal: bail without rendering tabs at all
   if (meError) {
@@ -79,6 +80,15 @@ export default function FriendsPage() {
     ? candidates.filter((u) => u.name.toLowerCase().includes(trimmedFindQuery))
     : candidates;
 
+  // only show the friends search box once the list is big enough to scan
+  const SHOW_FRIEND_SEARCH_AT = 8;
+  const trimmedFriendQuery = friendQuery.trim().toLowerCase();
+  const visibleFriends = trimmedFriendQuery
+    ? friendUsers.filter((u) =>
+        u.name.toLowerCase().includes(trimmedFriendQuery),
+      )
+    : friendUsers;
+
   return (
     <>
       <PageHeader title="Friends" subtitle="The people you read with." />
@@ -104,11 +114,30 @@ export default function FriendsPage() {
               your first request.
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {friendUsers.map((friend) => (
-                <FriendCard key={friend.id} friend={friend} />
-              ))}
-            </div>
+            <>
+              {friendUsers.length > SHOW_FRIEND_SEARCH_AT && (
+                <div className="relative mb-6">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                  <Input
+                    className="max-w-md pl-9"
+                    placeholder="Search your friends..."
+                    value={friendQuery}
+                    onChange={(e) => setFriendQuery(e.target.value)}
+                  />
+                </div>
+              )}
+              {visibleFriends.length === 0 ? (
+                <p className="text-sm text-muted">
+                  No matches for &ldquo;{friendQuery}&rdquo;.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {visibleFriends.map((friend) => (
+                    <FriendCard key={friend.id} friend={friend} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
 

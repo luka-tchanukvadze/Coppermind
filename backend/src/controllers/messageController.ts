@@ -106,9 +106,17 @@ export const getConversations = catchAsync(
           take: 1,
         },
       },
-      // Show newest conversations first
-      orderBy: { createdAt: "desc" },
     });
+
+    // Sort by most-recent activity: the last message's time, falling back to
+    // the conversation's createdAt for a brand-new convo with no messages yet.
+    // done in JS because the sort key lives on the included last message, not
+    // the conversation row. fine at this scale (every convo is fetched)
+    const lastActivity = (c: (typeof conversations)[number]) =>
+      c.messages[0]?.createdAt ?? c.createdAt;
+    conversations.sort(
+      (a, b) => lastActivity(b).getTime() - lastActivity(a).getTime(),
+    );
 
     // My lastReadAt per conversation. Separate query because Prisma can't
     // include my own participant alongside the filtered "other" one in a
@@ -236,7 +244,10 @@ export const getConversation = catchAsync(
 
     res
       .status(200)
-      .json({ status: "success", data: { conversation: ordered, hasMoreMessages } });
+      .json({
+        status: "success",
+        data: { conversation: ordered, hasMoreMessages },
+      });
   },
 );
 
