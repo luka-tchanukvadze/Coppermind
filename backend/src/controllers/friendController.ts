@@ -3,6 +3,7 @@ import catchAsync from "../utils/catchAsync.js";
 import prisma from "../prisma.js";
 import AppError from "../utils/appError.js";
 import { invalidateRecs } from "../utils/recCache.js";
+import { io, getReceiverSocketIds } from "../socket/socket.js";
 
 export const sendRequest = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -41,6 +42,12 @@ export const sendRequest = catchAsync(
       throw err;
     }
 
+    // ping the recipient's live sockets so their nav badge updates instantly,
+    // no payload needed - the client just refetches incoming requests
+    for (const sockId of getReceiverSocketIds(friendId)) {
+      io.to(sockId).emit("friendRequest");
+    }
+
     res.status(201).json({
       status: "success",
       data: { friendRequest: result },
@@ -52,16 +59,44 @@ export const getIncomingRequests = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
 
-    const result = await prisma.friendConnection.findMany({
-      where: { addresseeId: userId, status: "PENDING" },
-      include: { requester: { select: { id: true, name: true, photo: true } } },
-    });
+    // pull the requests + my "last opened Friends" marker together. unseenCount
+    // = requests newer than that marker, which drives the nav badge (facebook-
+    // style: opening Friends stamps the marker and clears the dot)
+    const [result, me] = await Promise.all([
+      prisma.friendConnection.findMany({
+        where: { addresseeId: userId, status: "PENDING" },
+        include: {
+          requester: { select: { id: true, name: true, photo: true } },
+        },
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { friendRequestsSeenAt: true },
+      }),
+    ]);
+
+    const seenAt = me?.friendRequestsSeenAt ?? new Date(0);
+    const unseenCount = result.filter((r) => r.createdAt > seenAt).length;
 
     res.status(200).json({
       status: "success",
       results: result.length,
+      unseenCount,
       data: { result },
     });
+  },
+);
+
+// stamp "I just opened the Friends page" so unseenCount drops to 0. the badge
+// reappears only when a request arrives after this moment
+export const markRequestsSeen = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { friendRequestsSeenAt: new Date() },
+    });
+    res.status(204).end();
   },
 );
 

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { MobileNav } from "@/components/shared/mobile-nav";
 import { useNewMessageSubscription } from "@/lib/socket/use-new-message-subscription";
+import { useFriendRequestSubscription } from "@/lib/socket/use-friend-request-subscription";
 
 // Wraps the authed app body. Chat needs a fixed full-height flex column (so the
 // message list scrolls while the header/input stay pinned), every other page
@@ -16,6 +17,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   // app-wide so newMessage pushes update unread badges on every page, not
   // just inside /chat
   useNewMessageSubscription();
+  // app-wide so an incoming friend request updates the Friends nav badge from
+  // any page, the instant it's sent
+  useFriendRequestSubscription();
 
   // Lock the root scroller on chat routes. Without this, mobile browsers
   // retract the address bar by scrolling the document, and since the chat

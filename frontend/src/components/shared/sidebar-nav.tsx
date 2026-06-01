@@ -17,6 +17,7 @@ import { UserPic } from "./user-pic";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/lib/api/users";
 import { useUnreadTotal } from "@/lib/api/conversations";
+import { useUnseenRequestCount } from "@/lib/api/friends";
 
 interface NavItem {
   href: string;
@@ -67,6 +68,12 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: user, isLoading, error } = useMe();
   const unreadTotal = useUnreadTotal();
+  const unseenRequests = useUnseenRequestCount();
+
+  // map a nav item to its badge count (0 = no badge). chat shows unread
+  // messages, friends shows unseen incoming requests
+  const badgeFor = (href: string) =>
+    href === "/chat" ? unreadTotal : href === "/friends" ? unseenRequests : 0;
 
   return (
     <div className="flex h-full w-65 shrink-0 flex-col border-r bg-surface/60">
@@ -81,7 +88,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               ? item.match(pathname)
               : pathname === item.href;
             const Icon = item.icon;
-            const showBadge = item.href === "/chat" && unreadTotal > 0;
+            const badgeCount = badgeFor(item.href);
+            const showBadge = badgeCount > 0;
             return (
               <li key={item.href}>
                 <Link
@@ -99,7 +107,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                   <span className="font-medium">{item.label}</span>
                   {showBadge && (
                     <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1.5 text-[11px] font-semibold text-white">
-                      {unreadTotal > 9 ? "9+" : unreadTotal}
+                      {badgeCount > 9 ? "9+" : badgeCount}
                     </span>
                   )}
                 </Link>

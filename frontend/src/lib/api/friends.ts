@@ -13,6 +13,9 @@ type FriendConnection = {
 };
 
 type FriendListResponse = { data: { result: FriendConnection[] } };
+// incoming-requests response also carries unseenCount (requests newer than my
+// last Friends-page visit) for the nav badge
+type IncomingRequestsResponse = FriendListResponse & { unseenCount: number };
 type MutualFriendsResponse = { data: { mutualFriends: FriendUser[] } };
 
 async function fetchFriends(): Promise<FriendConnection[]> {
@@ -20,9 +23,16 @@ async function fetchFriends(): Promise<FriendConnection[]> {
   return res.data.result;
 }
 
-async function fetchIncomingRequests(): Promise<FriendConnection[]> {
-  const res = await apiClient.get<FriendListResponse>("/friends/requests");
-  return res.data.result;
+type IncomingRequests = { result: FriendConnection[]; unseenCount: number };
+
+async function fetchIncomingRequests(): Promise<IncomingRequests> {
+  const res =
+    await apiClient.get<IncomingRequestsResponse>("/friends/requests");
+  return { result: res.data.result, unseenCount: res.unseenCount };
+}
+
+async function markRequestsSeenRequest() {
+  return apiClient.patch("/friends/requests/seen");
 }
 
 async function fetchOutgoingRequests(): Promise<FriendConnection[]> {
@@ -56,10 +66,39 @@ function useFriends() {
   });
 }
 
+// the page consumes the request list (select unwraps .result so existing
+// callers stay unchanged). the badge consumes unseenCount via the hook below.
+// kept fresh by the socket friendRequest event (useFriendRequestSubscription)
 function useIncomingRequests() {
   return useQuery({
     queryKey: ["friends-incoming"],
     queryFn: () => fetchIncomingRequests(),
+    select: (data) => data.result,
+  });
+}
+
+// unseen incoming-request count for the nav badge. shares the same cached
+// query as useIncomingRequests (no extra fetch) - just selects a different slice
+function useUnseenRequestCount(): number {
+  const { data } = useQuery({
+    queryKey: ["friends-incoming"],
+    queryFn: () => fetchIncomingRequests(),
+    select: (d) => d.unseenCount,
+  });
+  return data ?? 0;
+}
+
+// call when the Friends page opens - stamps "seen" server-side and zeroes the
+// badge locally so it clears instantly
+function useMarkRequestsSeen() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markRequestsSeenRequest,
+    onSuccess: () => {
+      queryClient.setQueryData<IncomingRequests>(["friends-incoming"], (old) =>
+        old ? { ...old, unseenCount: 0 } : old,
+      );
+    },
   });
 }
 
@@ -129,6 +168,8 @@ function useRemoveFriend() {
 export {
   useFriends,
   useIncomingRequests,
+  useUnseenRequestCount,
+  useMarkRequestsSeen,
   useOutgoingRequests,
   useMutualFriends,
   useSendFriendRequest,

@@ -10,6 +10,9 @@ router.use(authController.protect);
 // ─── Static routes first (before :friendId catches them) ───
 router.route("/").get(friendController.getFriends);
 router.route("/requests").get(friendController.getIncomingRequests);
+// PATCH /requests/seen - stamp "opened Friends" to clear the nav badge.
+// declared before /:friendId so the literal segment isn't swallowed
+router.route("/requests/seen").patch(friendController.markRequestsSeen);
 router.route("/sent").get(friendController.getOutgoingRequests);
 router.route("/mutual/:friendId").get(friendController.getMutualFriends);
 

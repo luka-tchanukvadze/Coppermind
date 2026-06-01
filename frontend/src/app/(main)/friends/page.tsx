@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
   useFriends,
   useIncomingRequests,
   useOutgoingRequests,
+  useMarkRequestsSeen,
   type FriendUser,
 } from "@/lib/api/friends";
 import { useMe, useAllUsers } from "@/lib/api/users";
@@ -33,6 +34,14 @@ export default function FriendsPage() {
   // keep ALL hooks above the meError early return - rules-of-hooks
   const [findQuery, setFindQuery] = useState("");
   const [friendQuery, setFriendQuery] = useState("");
+
+  // opening the Friends page counts as "seen" - stamp it server-side so the nav
+  // badge clears (facebook-style). once per mount. mutate is stable
+  const markSeen = useMarkRequestsSeen();
+  const markSeenMutate = markSeen.mutate;
+  useEffect(() => {
+    markSeenMutate();
+  }, [markSeenMutate]);
 
   // auth-fatal: bail without rendering tabs at all
   if (meError) {

@@ -23,6 +23,10 @@ model User {
   // written on the last-tab disconnect. used by the chat header to show
   // "Last seen X ago" (or "Last seen recently" past 1 day) when offline
   lastSeenAt           DateTime?
+  // bumped to now() when the user opens the Friends page. the nav badge counts
+  // incoming requests newer than this - so opening Friends clears the dot,
+  // facebook-style. null = never opened, so every pending request counts
+  friendRequestsSeenAt DateTime?
 
   userBooks            UserBook[]
   customData           CustomData[]
