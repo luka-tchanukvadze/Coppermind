@@ -133,6 +133,13 @@ export const acceptRequest = catchAsync(
     // new friend signal affects recs for both sides
     void invalidateRecs(userId, friendId);
 
+    // tell the requester (friendId) their request was accepted, so their Sent
+    // list + friends list update live without a refresh. the accepter is the
+    // one acting, so their own UI already refreshes via the mutation
+    for (const sockId of getReceiverSocketIds(friendId)) {
+      io.to(sockId).emit("friendAccepted");
+    }
+
     res.status(200).json({
       status: "success",
       message: "Friend request accepted",
