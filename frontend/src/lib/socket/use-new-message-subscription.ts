@@ -91,9 +91,34 @@ export function useNewMessageSubscription() {
       );
     };
 
+    // resync after a dropped-then-restored connection. messages sent during a
+    // mobile network blip are pushed while we're offline and never arrive via
+    // newMessage, so the open thread + list would silently miss them. skip the
+    // FIRST connect (initial load already has fresh data) and only refetch on
+    // an actual reconnect
+    // if the socket is already connected when we attach, treat any later
+    // connect as a reconnect (we missed the initial one to the race)
+    let hasConnected = socket.connected;
+    const handleConnect = () => {
+      if (!hasConnected) {
+        hasConnected = true;
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      const path = pathnameRef.current;
+      if (path?.startsWith("/chat/")) {
+        const id = path.slice("/chat/".length);
+        if (id) {
+          queryClient.invalidateQueries({ queryKey: ["conversation", id] });
+        }
+      }
+    };
+
     socket.on("newMessage", handleNewMessage);
+    socket.on("connect", handleConnect);
     return () => {
       socket.off("newMessage", handleNewMessage);
+      socket.off("connect", handleConnect);
     };
   }, [socket, queryClient]);
 }

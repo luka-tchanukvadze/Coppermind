@@ -92,14 +92,21 @@ export default function ChatRoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, messages.length, hasConversation]);
 
+  // drop the dead conversation's cache entry on a 404. done in an effect, not
+  // in render - mutating the cache mid-render can trip React's "update while
+  // rendering" warning. without this the stale ConversationDetail lingers
+  const is404 = error instanceof ApiError && error.status === 404;
+  useEffect(() => {
+    if (is404) {
+      queryClient.removeQueries({ queryKey: ["conversation", conversationId] });
+    }
+  }, [is404, conversationId, queryClient]);
+
   if (isLoading) {
     return <ChatThreadSkeleton />;
   }
 
-  if (error instanceof ApiError && error.status === 404) {
-    // drop the dead conversation's cache entry. without this the stale
-    // ConversationDetail sits in memory until a full reload
-    queryClient.removeQueries({ queryKey: ["conversation", conversationId] });
+  if (is404) {
     notFound();
   }
   if (error || !conversation || !other) {

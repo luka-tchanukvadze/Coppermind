@@ -72,6 +72,23 @@ app.use("/api/v1/users/signup", authLimiter);
 app.use("/api/v1/users/forgotPassword", authLimiter);
 app.use("/api/v1/users/resetPassword", authLimiter);
 
+// book search hits external APIs (google books quota + the pi). cap it so a
+// few users typing fast can't burn the daily quota or hammer the box. looser
+// than auth - 30/min/IP is plenty for real typing-with-debounce use
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: "fail", message: "Slow down a moment, then try again" },
+  passOnStoreError: true,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+    prefix: "rl:search:",
+  }),
+});
+app.use("/api/v1/books/search", searchLimiter);
+
 // Routes
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/books", bookRouter);

@@ -184,12 +184,24 @@ export const toggleLike = catchAsync(
       where: { userId_discussionId: { userId, discussionId: id } },
     });
 
+    // both branches catch the race from a double-tap (common on mobile): two
+    // requests both read the same existingLike, then both try the same write.
+    // P2025 = row already deleted, P2002 = row already created. either way the
+    // intent succeeded, so report the resulting state instead of 500ing
     if (existingLike) {
-      await prisma.like.delete({ where: { id: existingLike.id } });
+      try {
+        await prisma.like.delete({ where: { id: existingLike.id } });
+      } catch (err: any) {
+        if (err?.code !== "P2025") throw err;
+      }
       return res.status(200).json({ status: "success", liked: false });
     }
 
-    await prisma.like.create({ data: { userId, discussionId: id } });
+    try {
+      await prisma.like.create({ data: { userId, discussionId: id } });
+    } catch (err: any) {
+      if (err?.code !== "P2002") throw err;
+    }
     res.status(200).json({ status: "success", liked: true });
   },
 );

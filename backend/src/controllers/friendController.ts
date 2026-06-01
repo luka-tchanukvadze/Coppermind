@@ -26,10 +26,20 @@ export const sendRequest = catchAsync(
     if (existing)
       return next(new AppError("Friend request already exists", 400));
 
-    // 3. Don't pass status or IDs from body - use only trusted values
-    const result = await prisma.friendConnection.create({
-      data: { requesterId: userId, addresseeId: friendId },
-    });
+    // 3. Don't pass status or IDs from body - use only trusted values.
+    // catch P2002 from a double-tap: two requests both pass the existence
+    // check above, then both insert. the unique constraint rejects the second
+    // - treat it as the same "already exists" case instead of a 500
+    let result;
+    try {
+      result = await prisma.friendConnection.create({
+        data: { requesterId: userId, addresseeId: friendId },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002")
+        return next(new AppError("Friend request already exists", 400));
+      throw err;
+    }
 
     res.status(201).json({
       status: "success",

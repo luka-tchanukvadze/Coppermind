@@ -42,10 +42,19 @@ export const addUserBook = catchAsync(
       create: { title, author, genres, coverImage, externalApiId },
     });
 
-    // Link this book to the user
-    const userBook = await prisma.userBook.create({
-      data: { userId, bookId: book.id, progress, isPrivate },
-    });
+    // Link this book to the user. catch P2002 from a double-tap or adding a
+    // book already on the shelf: the (userId, bookId) unique rejects the
+    // duplicate - return a friendly message instead of a raw 500
+    let userBook;
+    try {
+      userBook = await prisma.userBook.create({
+        data: { userId, bookId: book.id, progress, isPrivate },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002")
+        return next(new AppError("This book is already on your shelf", 409));
+      throw err;
+    }
 
     // Invalidate global books cache since upsert may have added a new book
     await redisClient.del(BOOKS_CACHE_KEY);
