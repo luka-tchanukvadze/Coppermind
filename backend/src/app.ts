@@ -58,6 +58,10 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: "fail", message: "Too many attempts, try again later" },
+  // if redis is down the store throws on every call. without this, auth
+  // endpoints would 500 for everyone instead of just losing rate limiting.
+  // degrade open: allow the request through rather than block login/signup
+  passOnStoreError: true,
   store: new RedisStore({
     sendCommand: (...args: string[]) => redisClient.sendCommand(args),
     prefix: "rl:auth:",

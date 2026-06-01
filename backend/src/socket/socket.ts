@@ -121,8 +121,26 @@ export const initSocket = (httpServer: HttpServer) => {
 
     // query friends ONCE on connect and stash. accepting a new friend mid-
     // session won't update this until reconnect - intentional, friend accept
-    // is rare and the cost of re-querying on every presence change is real
-    const friendIds = await fetchFriendIds(userId);
+    // is rare and the cost of re-querying on every presence change is real.
+    // guarded: socket.io does NOT catch a rejected promise from an async
+    // connection handler, so a transient DB error here would bubble to the
+    // process-level unhandledRejection handler and kill the server for
+    // everyone. on failure, drop just this socket and bail
+    let friendIds: string[];
+    try {
+      friendIds = await fetchFriendIds(userId);
+    } catch (err) {
+      console.error(
+        "fetchFriendIds failed on connect:",
+        err instanceof Error ? err.message : err,
+      );
+      // roll back the maps i just wrote so this dead socket leaves no ghost
+      sockets.delete(socket.id);
+      if (sockets.size === 0) userSocketMap.delete(userId);
+      socketActivity.delete(socket.id);
+      socket.disconnect(true);
+      return;
+    }
     socket.data.friendIds = friendIds;
 
     // snapshot: tell THIS socket who of my friends is currently online or away
@@ -150,8 +168,7 @@ export const initSocket = (httpServer: HttpServer) => {
       socketActivity.set(socket.id, "away");
       const after = userState(userId);
       if (before !== after) {
-        const event =
-          after === "away" ? "presence:away" : "presence:offline";
+        const event = after === "away" ? "presence:away" : "presence:offline";
         broadcastPresence(friendIds, event, userId);
       }
     });
@@ -167,29 +184,23 @@ export const initSocket = (httpServer: HttpServer) => {
     });
 
     // typing forwarding. client knows which friend they're typing to
-    socket.on(
-      "typing:start",
-      ({ friendId }: { friendId: string }) => {
-        if (!friendIds.includes(friendId)) return;
-        const targetSockets = userSocketMap.get(friendId);
-        if (!targetSockets) return;
-        for (const sid of targetSockets) {
-          io.to(sid).emit("typing:start", { fromUserId: userId });
-        }
-      },
-    );
+    socket.on("typing:start", ({ friendId }: { friendId: string }) => {
+      if (!friendIds.includes(friendId)) return;
+      const targetSockets = userSocketMap.get(friendId);
+      if (!targetSockets) return;
+      for (const sid of targetSockets) {
+        io.to(sid).emit("typing:start", { fromUserId: userId });
+      }
+    });
 
-    socket.on(
-      "typing:stop",
-      ({ friendId }: { friendId: string }) => {
-        if (!friendIds.includes(friendId)) return;
-        const targetSockets = userSocketMap.get(friendId);
-        if (!targetSockets) return;
-        for (const sid of targetSockets) {
-          io.to(sid).emit("typing:stop", { fromUserId: userId });
-        }
-      },
-    );
+    socket.on("typing:stop", ({ friendId }: { friendId: string }) => {
+      if (!friendIds.includes(friendId)) return;
+      const targetSockets = userSocketMap.get(friendId);
+      if (!targetSockets) return;
+      for (const sid of targetSockets) {
+        io.to(sid).emit("typing:stop", { fromUserId: userId });
+      }
+    });
 
     socket.on("disconnect", async () => {
       const set = userSocketMap.get(userId);
