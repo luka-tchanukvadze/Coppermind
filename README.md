@@ -1,79 +1,60 @@
 # Coppermind
 
-> **Work in progress.** Backend is functional, frontend is mid-integration. Many features are stubbed against dummy data and will be wired to the real API as they go.
+**Goodreads, without the noise.** A calm, real-time reading app: shelve your books, keep private notes, follow friends, argue about plot twists, and chat live - all self-hosted, all yours.
 
-Goodreads, without the noise. A full-stack reading app with shelves, public notes, friend connections, discussion threads, and live chat - self-hosted, real-time, fully owned.
+🔗 **Live:** [coppermind.tchanu.com](https://coppermind.tchanu.com)
 
-## Stack
+---
 
-**Backend** - Express 5, TypeScript, Prisma 7 (with `@prisma/adapter-pg`), PostgreSQL 16, Redis 7, Socket.IO, JWT auth in httpOnly cookies, bcryptjs, Nodemailer/SendGrid.
+## What it does
 
-**Frontend** - Next.js 15 (App Router), React 19, Tailwind v4, shadcn-style primitives (Radix + cva), TanStack Query, react-hook-form + Zod, Sonner toasts, lucide-react.
+- **Your shelf** - track what you want to read, are reading, and finished. Search it instantly.
+- **Notes** - jot quotes and thoughts on any book. Keep them private, or let friends see them.
+- **Friends** - send requests, see who's online, peek at each other's shelves.
+- **Discussions** - start a thread about a book, reply, like, share.
+- **Live chat** - real-time DMs with typing indicators, presence, and unread badges.
+- **Recommendations** - what your friends are reading, picks from your genres, and what's trending.
 
-**Infra** - Docker, GitHub Actions builds an ARM64 image and pushes to GHCR on every `master` push. A Raspberry Pi runs the backend stack via docker-compose; Watchtower auto-pulls and restarts on new images. Migrations run automatically on container startup.
+Built to feel quiet and fast, not gamified and loud.
+
+## How it's built
+
+Two apps, one repo.
+
+**Frontend** - Next.js 15 (App Router) + React 19, Tailwind v4, TanStack Query, react-hook-form + Zod. Deployed on Vercel.
+
+**Backend** - Express 5 + TypeScript, Prisma + PostgreSQL, Redis (cache + rate limiting), Socket.IO for everything real-time. JWT auth in httpOnly cookies.
+
+**Infra** - the interesting part: the backend runs in Docker **on a Raspberry Pi at home**, exposed through a Cloudflare Tunnel. Push to `master`, GitHub Actions builds an ARM64 image, and Watchtower on the Pi auto-pulls and restarts it. Migrations run on boot. No cloud server bill.
+
+```
+Vercel (frontend)  ──►  Cloudflare Tunnel  ──►  Raspberry Pi (Docker: API + Postgres + Redis)
+```
 
 ## Repo layout
 
 ```
-.
-├── backend/
-│   ├── src/
-│   │   ├── server.ts          entry point
-│   │   ├── app.ts             express app + routes wiring
-│   │   ├── prisma.ts          prisma client (uses pg.Pool adapter)
-│   │   ├── redisClient.ts
-│   │   ├── socket/            socket.io setup
-│   │   ├── routes/
-│   │   ├── controllers/
-│   │   └── utils/
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── migrations/
-│   └── prisma.config.ts
-├── frontend/
-│   ├── src/
-│   │   ├── app/               next.js app router pages + layouts
-│   │   ├── components/
-│   │   │   ├── ui/            shadcn primitives
-│   │   │   ├── shared/        cross-feature components
-│   │   │   └── <feature>/     feature-scoped components
-│   │   ├── lib/
-│   │   │   ├── api/           one file per backend resource
-│   │   │   ├── schemas/       zod schemas (form validation)
-│   │   │   ├── mocks/         dummy data (will shrink as integration progresses)
-│   │   │   ├── format.ts
-│   │   │   └── utils.ts       cn() helper
-│   │   └── types/
-│   └── next.config.ts
-├── Dockerfile                 backend image
-├── docker-compose.yml         (Pi-side, not committed)
-└── .github/workflows/build-image.yml
+backend/    Express API, Prisma schema + migrations, Socket.IO
+frontend/   Next.js app - app/ (pages), components/, lib/api (one file per resource)
+Dockerfile  backend image (built by CI, run on the Pi)
 ```
 
-## Local development
+## Run it locally
 
-### Backend
-
-Needs Postgres + Redis running locally (or pointed at the Pi). Set `backend/.env` with `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, etc.
+Needs Postgres + Redis. Set `backend/.env` (`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, ...).
 
 ```bash
+# backend
 npm install
 npx prisma migrate dev --schema=./backend/prisma/schema.prisma
 npm run dev
+
+# frontend
+cd frontend && npm install && npm run dev
 ```
 
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Deployment
-
-Push to `master`. GitHub Actions builds the image, pushes to GHCR, Watchtower on the Pi pulls and restarts. Migrations run on container startup.
+Open [localhost:3000](http://localhost:3000).
 
 ## Why "Coppermind"
 
-Stormlight Archive reference. Storage Feruchemy stores memories.
+A *Stormlight Archive* reference - a coppermind stores memories perfectly. Felt right for a place to keep what you read.
