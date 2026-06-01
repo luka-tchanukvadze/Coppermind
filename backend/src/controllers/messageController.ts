@@ -214,9 +214,11 @@ export const getConversation = catchAsync(
         },
         // newest page only: take the last N by fetching desc, then reverse to
         // asc below so the client still renders oldest->newest. fetch one extra
-        // to detect whether older messages exist without a second count query
+        // to detect whether older messages exist without a second count query.
+        // (createdAt desc, id desc) matches getOlderMessages so the page
+        // boundary lines up exactly - no gap/overlap at the same millisecond
         messages: {
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           take: MESSAGE_PAGE_SIZE + 1,
           include: {
             user: {
@@ -270,16 +272,27 @@ export const getOlderMessages = catchAsync(
     if (!isParticipant)
       return next(new AppError("Conversation not found", 404));
 
-    // anchor on the cursor message's timestamp so we page by time, not by id
+    // anchor on the cursor message's (createdAt, id). need id as a tiebreaker:
+    // paging on createdAt alone with strict `lt` silently drops any messages
+    // sharing the cursor's exact millisecond (bursts/seeds collide easily)
     const cursor = await prisma.message.findFirst({
       where: { id: before, conversationId },
-      select: { createdAt: true },
+      select: { createdAt: true, id: true },
     });
     if (!cursor) return next(new AppError("Message not found", 404));
 
+    // compound cursor: strictly older by time, OR same instant but an earlier
+    // id. matches the (createdAt desc, id desc) ordering below so nothing at the
+    // boundary millisecond is skipped or repeated
     const older = await prisma.message.findMany({
-      where: { conversationId, createdAt: { lt: cursor.createdAt } },
-      orderBy: { createdAt: "desc" },
+      where: {
+        conversationId,
+        OR: [
+          { createdAt: { lt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+        ],
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: MESSAGE_PAGE_SIZE + 1,
       include: {
         user: {

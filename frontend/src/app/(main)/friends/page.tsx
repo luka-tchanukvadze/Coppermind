@@ -35,13 +35,15 @@ export default function FriendsPage() {
   const [findQuery, setFindQuery] = useState("");
   const [friendQuery, setFriendQuery] = useState("");
 
-  // opening the Friends page counts as "seen" - stamp it server-side so the nav
-  // badge clears (facebook-style). once per mount. mutate is stable
+  // being on the Friends page counts as "seen" - stamp it server-side so the
+  // nav badge clears (facebook-style). keyed on incoming.length so it re-fires
+  // when a new request arrives via socket WHILE the page is open - otherwise the
+  // refetch would re-light the badge for a request the user is looking at
   const markSeen = useMarkRequestsSeen();
   const markSeenMutate = markSeen.mutate;
   useEffect(() => {
     markSeenMutate();
-  }, [markSeenMutate]);
+  }, [markSeenMutate, incoming.length]);
 
   // auth-fatal: bail without rendering tabs at all
   if (meError) {

@@ -47,8 +47,17 @@ function groupConsecutive(messages: Message[]): MessageGroup[] {
   return groups;
 }
 
+// thin wrapper: key the room by conversationId so switching threads REMOUNTS
+// it. without this, Next reuses the one instance (the room is layout children
+// with no key), so refs like prependAnchorRef and an in-flight older-messages
+// mutation would leak across conversations - opening a chat mid-load could
+// land scrolled wrong, skip mark-read, or prepend into the wrong thread
 export default function ChatRoomPage() {
   const { conversationId } = useParams<{ conversationId: string }>();
+  return <ChatRoom key={conversationId} conversationId={conversationId} />;
+}
+
+function ChatRoom({ conversationId }: { conversationId: string }) {
   const {
     data: conversation,
     isLoading,
@@ -81,6 +90,18 @@ export default function ChatRoomPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
+  // whether the user was at/near the bottom, sampled continuously on scroll.
+  // read this (not a fresh measurement) when messages change: by the time the
+  // effect runs the new message has already grown scrollHeight, so measuring
+  // then would wrongly read "not at bottom" for a tall incoming message. start
+  // true so the very first load counts as at-bottom
+  const nearBottomRef = useRef(true);
+  const onScroll = useCallback(() => {
+    const el = scrollerRef.current;
+    if (el) nearBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }, []);
+
   // tracks whether the next messages-length change is a history PREPEND (load
   // older) or a normal APPEND/initial-load. on a prepend I must NOT yank to
   // the bottom - instead we restore the scroll position so the view stays put.
@@ -103,6 +124,10 @@ export default function ChatRoomPage() {
   // one place (then clearing it) avoids a cross-effect ordering race - a
   // prepend must skip BOTH the bottom-pin and the mark-read below
   const hasConversation = !!conversation;
+  // first render = initial load: always pin + mark read even though the empty
+  // scroller's "near bottom" check is ambiguous. after that, only follow new
+  // messages when the user is actually at the bottom
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
     const isPrepend = prependAnchorRef.current !== null;
     if (isPrepend) {
@@ -110,9 +135,16 @@ export default function ChatRoomPage() {
       prependAnchorRef.current = null;
       return;
     }
-    // append or initial load: pin to newest + mark the thread read
-    scrollToBottom();
-    if (hasConversation) markRead.mutate(conversationId);
+    // on initial load always snap to newest + mark read. after that, a new
+    // message only pins (and marks read) if the user was near the bottom (read
+    // from the ref sampled on scroll, before this message grew the height) - so
+    // someone scrolled up reading history isn't yanked down
+    const initial = !didInitialScrollRef.current;
+    if (initial || nearBottomRef.current) {
+      didInitialScrollRef.current = true;
+      scrollToBottom();
+      if (hasConversation) markRead.mutate(conversationId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, messages.length, hasConversation, scrollToBottom]);
 
@@ -130,6 +162,10 @@ export default function ChatRoomPage() {
     const el = scrollerRef.current;
     const id = oldestIdRef.current;
     if (!el || !id || isPendingRef.current) return;
+    // flip the guard synchronously - react-query's isPending only turns true on
+    // the next render, so without this a second observer callback (momentum
+    // scroll, spinner layout shift) fires a duplicate request before then
+    isPendingRef.current = true;
     // capture current scrollHeight so the layout effect can restore position
     prependAnchorRef.current = el.scrollHeight;
     mutateOlder(id, {
@@ -193,6 +229,8 @@ export default function ChatRoomPage() {
     if (!trimmed || !other || !me) return;
     setText("");
     stopTyping();
+    // sending always jumps to the newest message, even if I'd scrolled up
+    nearBottomRef.current = true;
 
     // clientMessageId rides along with the request and comes back on the
     // socket emit so the dedupe in use-new-message-subscription can swap
@@ -267,6 +305,7 @@ export default function ChatRoomPage() {
 
       <div
         ref={scrollerRef}
+        onScroll={onScroll}
         className="flex-1 overflow-y-auto overscroll-contain px-6 py-6"
       >
         <div className="mx-auto max-w-2xl space-y-5">
