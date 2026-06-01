@@ -63,12 +63,6 @@ npm run dev
 cd frontend && npm install && npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000).
-
-## What it isn't (yet)
-
-Straight about scope: one box, no horizontal scaling - presence lives in memory, so a restart drops it. Chat is 1:1, text and emoji, no read receipts. No automated tests yet. It's a personal project I actually run, not a product.
-
 ## Why "Coppermind"
 
 A *Stormlight Archive* reference. A coppermind is where you store memories so you don't lose them. Felt right for a place to keep what you read.
