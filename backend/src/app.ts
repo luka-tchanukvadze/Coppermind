@@ -48,6 +48,11 @@ app.use(
 app.use(express.json({ limit: "50kb" }));
 app.use(cookieParser());
 
+// liveness probe for docker/cloudflare
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // rate limit on auth endpoints - 10 attempts per 15 min per IP.
 // blunts brute-force on login + signup spam. forgotPassword too so
 // attackers can't flood inboxes. counter lives in redis so it survives

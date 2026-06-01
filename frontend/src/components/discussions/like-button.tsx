@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,14 @@ export function LikeButton({
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const toggleLike = useToggleLike(discussionId);
+
+  // re-sync when fresh server data arrives (e.g. someone else liked this while
+  // I'm viewing and the detail query refetched). without this the local state
+  // stays frozen at mount-time values and the count drifts from reality
+  useEffect(() => {
+    setLiked(initialLiked);
+    setCount(initialCount);
+  }, [initialLiked, initialCount]);
 
   const handleToggle = () => {
     // optimistic flip

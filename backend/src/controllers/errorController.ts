@@ -24,6 +24,16 @@ export default (err: any, req: Request, res: Response, next: NextFunction) => {
 
   const isDev = process.env.NODE_ENV !== "production";
 
+  // in prod, only trust messages I set: AppError (isOperational) and
+  // the Prisma codes mapped above. anything else is an unexpected error whose
+  // raw message could leak DB/internal details, so send a generic one. dev
+  // always sees the real message for debugging
+  const mappedPrisma = ["P2002", "P2025", "P2003"].includes(err.code);
+  const safeMessage = err.isOperational || mappedPrisma;
+  if (!isDev && !safeMessage) {
+    message = "Something went wrong. Please try again.";
+  }
+
   res.status(statusCode).json({
     status,
     message,

@@ -15,7 +15,15 @@ const { Pool } = pg;
 
 const connectionString = process.env.DATABASE_URL;
 
-const pool = new Pool({ connectionString });
+// explicit pool sizing. default max is 10 - feed/recs fire several queries in
+// parallel, so a burst of concurrent users could queue behind 10 connections.
+// 20 stays well under postgres's default max_connections (100). timeout so a
+// request fails fast instead of hanging if the pool is saturated
+const pool = new Pool({
+  connectionString,
+  max: 20,
+  connectionTimeoutMillis: 5000,
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
