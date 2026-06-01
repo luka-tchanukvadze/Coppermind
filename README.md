@@ -1,47 +1,57 @@
 # Coppermind
 
-**Goodreads, without the noise.** A calm, real-time reading app: shelve your books, keep private notes, follow friends, argue about plot twists, and chat live - all self-hosted, all yours.
+**Goodreads for people who actually want to talk about the book.** Shelve what you read, keep your notes with it, and argue plot twists with friends in real time.
 
-🔗 **Live:** [coppermind.tchanu.com](https://coppermind.tchanu.com)
+🔗 Live at [coppermind.tchanu.com](https://coppermind.tchanu.com) - served from a Raspberry Pi in my apartment.
 
 ---
 
-## What it does
+## What it is
 
-- **Your shelf** - track what you want to read, are reading, and finished. Search it instantly.
-- **Notes** - jot quotes and thoughts on any book. Keep them private, or let friends see them.
-- **Friends** - send requests, see who's online, peek at each other's shelves.
-- **Discussions** - start a thread about a book, reply, like, share.
-- **Live chat** - real-time DMs with typing indicators, presence, and unread badges.
-- **Recommendations** - what your friends are reading, picks from your genres, and what's trending.
+A social reading app. You keep a shelf (want to read / reading / finished), write notes on each book that are private or shared per entry, add friends, start discussions, and message them live. The catalog comes from Google Books with an Open Library fallback. Recommendations are three tiers: what your friends are reading, then your top genres, then what's popular.
 
-Built to feel quiet and fast, not gamified and loud.
+It's meant to feel quiet. No streaks, no points, no algorithmic feed shouting at you.
 
-## How it's built
+## The part worth reading the code for
 
-Two apps, one repo.
+Most of the work went into the live chat being *correct*, not just working in a demo.
 
-**Frontend** - Next.js 15 (App Router) + React 19, Tailwind v4, TanStack Query, react-hook-form + Zod. Deployed on Vercel.
+- **Optimistic send, no flicker.** The client mints a `clientMessageId`, the server echoes it back, and the socket handler reconciles three cases against the query cache - swap the optimistic row, skip a duplicate, or append an incoming one. It never refetches the thread, so messages you scrolled up to read don't vanish under you.
+- **Pagination that doesn't lose messages.** History pages in on scroll-up with a `(createdAt, id)` keyset cursor. Sorting on the timestamp alone silently drops messages that land in the same millisecond; the id tiebreaker closes that. Scroll position is anchored before paint, so the viewport never jumps when older messages load.
+- **Presence that survives multiple tabs.** A user maps to a *set* of sockets. Their state (online / away / offline) is derived from that set rather than stored, and events only fire on a real transition, so opening a second tab doesn't spam your friends with "came online."
+- **One marker, three features.** A single "last saw this at" timestamp per relationship drives unread message counts, read state, and the Facebook-style friend-request badge - no separate read-receipt tables.
 
-**Backend** - Express 5 + TypeScript, Prisma + PostgreSQL, Redis (cache + rate limiting), Socket.IO for everything real-time. JWT auth in httpOnly cookies.
+Elsewhere: the rate limiter fails open (if Redis dies, login and search keep serving instead of 500ing), book search retries then falls back Google to Open Library, and the error handler returns generic messages in production so it can't leak internals or let someone probe which emails are registered.
 
-**Infra** - the interesting part: the backend runs in Docker **on a Raspberry Pi at home**, exposed through a Cloudflare Tunnel. Push to `master`, GitHub Actions builds an ARM64 image, and Watchtower on the Pi auto-pulls and restarts it. Migrations run on boot. No cloud server bill.
+## How it runs
 
-```
-Vercel (frontend)  ──►  Cloudflare Tunnel  ──►  Raspberry Pi (Docker: API + Postgres + Redis)
-```
-
-## Repo layout
+The interesting half. There's no cloud server.
 
 ```
-backend/    Express API, Prisma schema + migrations, Socket.IO
-frontend/   Next.js app - app/ (pages), components/, lib/api (one file per resource)
-Dockerfile  backend image (built by CI, run on the Pi)
+push to master
+      │
+      ▼
+GitHub Actions ── build linux/arm64 image ──► GHCR
+                                               │
+                                       Watchtower pulls
+                                               ▼
+          Raspberry Pi (Docker): Express + Postgres + Redis
+                                               │
+                                     Cloudflare Tunnel
+                                               ▼
+                                       api.tchanu.com
 ```
+
+The frontend is on Vercel (`coppermind.tchanu.com`). The backend is a Docker container on a Raspberry Pi at home, reachable only through a Cloudflare Tunnel - no open ports, home IP never exposed. Push to `master`, CI builds the ARM64 image, Watchtower on the Pi pulls and restarts it, and migrations run on container boot. The auth cookie is scoped to the parent domain so it stays first-party across both subdomains.
+
+## Stack
+
+**Backend** - Express 5, TypeScript, Prisma + PostgreSQL, Redis, Socket.IO, JWT in an httpOnly cookie.
+**Frontend** - Next.js 15 (App Router), React 19, Tailwind v4, shadcn/ui, TanStack Query, react-hook-form + Zod.
 
 ## Run it locally
 
-Needs Postgres + Redis. Set `backend/.env` (`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, ...).
+Needs Postgres and Redis. Put `DATABASE_URL`, `REDIS_URL`, and `JWT_SECRET` in `backend/.env`.
 
 ```bash
 # backend
@@ -55,6 +65,10 @@ cd frontend && npm install && npm run dev
 
 Open [localhost:3000](http://localhost:3000).
 
+## What it isn't (yet)
+
+Straight about scope: one box, no horizontal scaling - presence lives in memory, so a restart drops it. Chat is 1:1, text and emoji, no read receipts. No automated tests yet. It's a personal project I actually run, not a product.
+
 ## Why "Coppermind"
 
-A *Stormlight Archive* reference - a coppermind stores memories perfectly. Felt right for a place to keep what you read.
+A *Stormlight Archive* reference. A coppermind is where you store memories so you don't lose them. Felt right for a place to keep what you read.
