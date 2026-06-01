@@ -38,16 +38,24 @@ export type ConversationPreview = {
   unreadCount: number;
 };
 
-// detail view: other participant + ALL messages (asc), each with .user
+// detail view: other participant + the most recent page of messages (asc),
+// each with .user. older messages are paged in on scroll-up. hasMoreMessages
+// is stored on the cached object so the chat knows when to stop loading
 export type ConversationDetail = {
   id: string;
   createdAt: string;
   participants: Participant[];
   messages: Message[];
+  hasMoreMessages?: boolean;
 };
 
 type ConversationsResponse = { data: { conversation: ConversationPreview[] } };
-type ConversationResponse = { data: { conversation: ConversationDetail } };
+type ConversationResponse = {
+  data: { conversation: ConversationDetail; hasMoreMessages: boolean };
+};
+type OlderMessagesResponse = {
+  data: { messages: Message[]; hasMoreMessages: boolean };
+};
 type SendMessageResponse = { data: { message: Message } };
 
 type SendMessageInput = {
@@ -65,7 +73,19 @@ async function fetchConversations(): Promise<ConversationPreview[]> {
 
 async function fetchConversation(id: string): Promise<ConversationDetail> {
   const res = await apiClient.get<ConversationResponse>(`/messages/${id}`);
-  return res.data.conversation;
+  // fold the sibling hasMoreMessages flag onto the cached object so the chat
+  // can read it straight off the conversation
+  return { ...res.data.conversation, hasMoreMessages: res.data.hasMoreMessages };
+}
+
+async function fetchOlderMessages(
+  conversationId: string,
+  before: string,
+): Promise<{ messages: Message[]; hasMoreMessages: boolean }> {
+  const res = await apiClient.get<OlderMessagesResponse>(
+    `/messages/${conversationId}/messages?before=${before}`,
+  );
+  return res.data;
 }
 
 async function sendMessageRequest(input: SendMessageInput): Promise<Message> {
@@ -101,16 +121,44 @@ function useConversation(id: string) {
   });
 }
 
+// load the page of messages older than the oldest one currently in cache and
+// prepend them. returns the mutation so the chat can show a loading state and
+// anchor the scroll. dedups by id in case a message straddles the boundary
+function useOlderMessages(conversationId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (before: string) =>
+      fetchOlderMessages(conversationId, before),
+    onSuccess: ({ messages: older, hasMoreMessages }) => {
+      queryClient.setQueryData<ConversationDetail>(
+        ["conversation", conversationId],
+        (old) => {
+          if (!old) return old;
+          const existing = new Set(old.messages.map((m) => m.id));
+          const fresh = older.filter((m) => !existing.has(m.id));
+          return {
+            ...old,
+            messages: [...fresh, ...old.messages],
+            hasMoreMessages,
+          };
+        },
+      );
+    },
+  });
+}
+
 function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: sendMessageRequest,
     onSuccess: (message) => {
+      // DON'T invalidate ["conversation", id] - the socket newMessage handler
+      // already swaps the optimistic row for the real one. a refetch here would
+      // also reset the thread to the newest page, wiping any older history the
+      // user scrolled up to load. only refresh the sidebar list preview/order.
       // conversationId comes back on the message - works even for a brand-new convo
-      queryClient.invalidateQueries({
-        queryKey: ["conversation", message.conversationId],
-      });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
@@ -122,10 +170,20 @@ function useUnsendMessage() {
   return useMutation({
     mutationFn: unsendMessageRequest,
     onSuccess: (_data, input) => {
-      // input still has conversationId - the deleted message changes both views
-      queryClient.invalidateQueries({
-        queryKey: ["conversation", input.conversationId],
-      });
+      // patch the deleted message out of the cached thread directly instead of
+      // refetching - a refetch would reset to the newest page and wipe any
+      // older history the user scrolled up to load
+      queryClient.setQueryData<ConversationDetail>(
+        ["conversation", input.conversationId],
+        (old) =>
+          old
+            ? {
+                ...old,
+                messages: old.messages.filter((m) => m.id !== input.messageId),
+              }
+            : old,
+      );
+      // sidebar preview/order may change (last message removed) - cheap refetch
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
@@ -159,6 +217,7 @@ function useUnreadTotal(): number {
 export {
   useConversations,
   useConversation,
+  useOlderMessages,
   useSendMessage,
   useUnsendMessage,
   useMarkConversationRead,

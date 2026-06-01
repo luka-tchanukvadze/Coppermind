@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { useTypingFor } from "@/lib/presence/presence-provider";
 import {
   useConversation,
+  useOlderMessages,
   useSendMessage,
   useMarkConversationRead,
   type ConversationDetail,
@@ -51,11 +58,15 @@ export default function ChatRoomPage() {
   const queryClient = useQueryClient();
   const sendMessage = useSendMessage();
   const markRead = useMarkConversationRead();
+  const olderMessages = useOlderMessages(conversationId);
 
   const [text, setText] = useState("");
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
 
   const messages = conversation?.messages ?? [];
+  const hasMore = conversation?.hasMoreMessages ?? false;
+  const oldestId = messages[0]?.id;
   const other = conversation?.participants[0]?.user;
   // hooks must run unconditionally - useTypingFor tolerates undefined friendId
   // and is a no-op while the conversation is still loading
@@ -70,9 +81,78 @@ export default function ChatRoomPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
+  // tracks whether the next messages-length change is a history PREPEND (load
+  // older) or a normal APPEND/initial-load. on a prepend I must NOT yank to
+  // the bottom - instead we restore the scroll position so the view stays put.
+  // holds the scrollHeight captured just before the older page is requested
+  const prependAnchorRef = useRef<number | null>(null);
+
+  // restore scroll position after older messages prepend. useLayoutEffect runs
+  // before paint so the user never sees the jump: the new content grew the
+  // scrollHeight, so add the delta to keep the same messages under the cursor.
+  // does NOT clear the anchor - the passive effect below reads it too, and
+  // layout effects run first, so clearing here would let the bottom-pin fire
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (el && prependAnchorRef.current !== null) {
+      el.scrollTop = el.scrollHeight - prependAnchorRef.current;
+    }
+  }, [messages.length]);
+
+  // single reaction to a messages-length change. reading the prepend flag in
+  // one place (then clearing it) avoids a cross-effect ordering race - a
+  // prepend must skip BOTH the bottom-pin and the mark-read below
+  const hasConversation = !!conversation;
   useEffect(() => {
+    const isPrepend = prependAnchorRef.current !== null;
+    if (isPrepend) {
+      // layout effect already restored position, just consume the flag
+      prependAnchorRef.current = null;
+      return;
+    }
+    // append or initial load: pin to newest + mark the thread read
     scrollToBottom();
-  }, [messages.length, scrollToBottom]);
+    if (hasConversation) markRead.mutate(conversationId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, messages.length, hasConversation, scrollToBottom]);
+
+  // auto-load older messages when the top sentinel scrolls into view. volatile
+  // values are read from refs so loadOlder stays referentially stable - without
+  // this the observer below would tear down and rebuild on every render (incl.
+  // every keystroke in the input)
+  const oldestIdRef = useRef(oldestId);
+  oldestIdRef.current = oldestId;
+  const isPendingRef = useRef(olderMessages.isPending);
+  isPendingRef.current = olderMessages.isPending;
+  const mutateOlder = olderMessages.mutate;
+
+  const loadOlder = useCallback(() => {
+    const el = scrollerRef.current;
+    const id = oldestIdRef.current;
+    if (!el || !id || isPendingRef.current) return;
+    // capture current scrollHeight so the layout effect can restore position
+    prependAnchorRef.current = el.scrollHeight;
+    mutateOlder(id, {
+      // on failure clear the anchor, else the next append is mistaken for a
+      // prepend and the bottom-pin gets skipped
+      onError: () => {
+        prependAnchorRef.current = null;
+      },
+    });
+  }, [mutateOlder]);
+
+  useEffect(() => {
+    const sentinel = topSentinelRef.current;
+    if (!sentinel || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadOlder();
+      },
+      { root: scrollerRef.current, rootMargin: "120px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadOlder]);
 
   useEffect(() => {
     const vv = window.visualViewport;
@@ -80,17 +160,6 @@ export default function ChatRoomPage() {
     vv.addEventListener("resize", scrollToBottom);
     return () => vv.removeEventListener("resize", scrollToBottom);
   }, [scrollToBottom]);
-
-  // mark read on open and whenever a new message lands while I'm viewing.
-  // keyed on conversationId + count only (not the conversation object ref,
-  // which changes on every cache patch) so I don't fire a redundant PATCH on
-  // the optimistic->real id swap. guard on hasConversation so it waits for the
-  // first load. mutate is referentially stable
-  const hasConversation = !!conversation;
-  useEffect(() => {
-    if (hasConversation) markRead.mutate(conversationId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, messages.length, hasConversation]);
 
   // drop the dead conversation's cache entry on a 404. done in an effect, not
   // in render - mutating the cache mid-render can trip React's "update while
@@ -201,6 +270,17 @@ export default function ChatRoomPage() {
         className="flex-1 overflow-y-auto overscroll-contain px-6 py-6"
       >
         <div className="mx-auto max-w-2xl space-y-5">
+          {/* sentinel: scrolling it into view pages in older messages. the
+              spinner shows while that request is in flight */}
+          {hasMore && (
+            <div ref={topSentinelRef} className="flex justify-center py-2">
+              {olderMessages.isPending && (
+                <span className="text-[11px] uppercase tracking-widest text-muted">
+                  Loading earlier messages...
+                </span>
+              )}
+            </div>
+          )}
           {groups.map((g, i) => {
             const isMe = g.userId === me?.id;
             const firstDate = g.messages[0].createdAt;

@@ -14,8 +14,11 @@ router
   .route("/:friendId")
   .post(validate(sendMessageSchema), messageController.sendMessage);
 router.route("/:conversationId").get(messageController.getConversation);
-// literal "/read" - declared before the :messageId param route so it can't be
-// swallowed (different methods anyway: PATCH vs DELETE)
+// literal "/messages" + "/read" - declared before the :messageId param route
+// so they can't be swallowed by it
+router
+  .route("/:conversationId/messages")
+  .get(messageController.getOlderMessages);
 router
   .route("/:conversationId/read")
   .patch(messageController.markConversationRead);

@@ -176,6 +176,11 @@ export const markConversationRead = catchAsync(
   },
 );
 
+// newest N messages loaded up front. older ones are paged in via
+// getOlderMessages as the user scrolls up - keeps the open call cheap even on
+// a thread with thousands of messages
+const MESSAGE_PAGE_SIZE = 50;
+
 export const getConversation = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
@@ -199,9 +204,12 @@ export const getConversation = catchAsync(
             },
           },
         },
-        // Get all messages sorted oldest first so chat reads top to bottom
+        // newest page only: take the last N by fetching desc, then reverse to
+        // asc below so the client still renders oldest->newest. fetch one extra
+        // to detect whether older messages exist without a second count query
         messages: {
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
+          take: MESSAGE_PAGE_SIZE + 1,
           include: {
             user: {
               select: {
@@ -218,7 +226,64 @@ export const getConversation = catchAsync(
 
     if (!conversation) return next(new AppError("Conversation not found", 404));
 
-    res.status(200).json({ status: "success", data: { conversation } });
+    // the +1 row, if present, just signals "there's more" - drop it, then flip
+    // back to ascending order for display
+    const hasMoreMessages = conversation.messages.length > MESSAGE_PAGE_SIZE;
+    const page = hasMoreMessages
+      ? conversation.messages.slice(0, MESSAGE_PAGE_SIZE)
+      : conversation.messages;
+    const ordered = { ...conversation, messages: page.reverse() };
+
+    res
+      .status(200)
+      .json({ status: "success", data: { conversation: ordered, hasMoreMessages } });
+  },
+);
+
+// page older messages for the infinite-scroll-up. ?before=<messageId> returns
+// the N messages immediately older than that one, newest-first reversed to asc
+export const getOlderMessages = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const conversationId = req.params.conversationId as string;
+    const before = req.query.before as string | undefined;
+
+    if (!before)
+      return next(new AppError("Query parameter 'before' is required", 400));
+
+    // membership check - don't leak another user's messages
+    const isParticipant = await prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId },
+      select: { id: true },
+    });
+    if (!isParticipant)
+      return next(new AppError("Conversation not found", 404));
+
+    // anchor on the cursor message's timestamp so we page by time, not by id
+    const cursor = await prisma.message.findFirst({
+      where: { id: before, conversationId },
+      select: { createdAt: true },
+    });
+    if (!cursor) return next(new AppError("Message not found", 404));
+
+    const older = await prisma.message.findMany({
+      where: { conversationId, createdAt: { lt: cursor.createdAt } },
+      orderBy: { createdAt: "desc" },
+      take: MESSAGE_PAGE_SIZE + 1,
+      include: {
+        user: {
+          select: { id: true, name: true, photo: true, lastSeenAt: true },
+        },
+      },
+    });
+
+    const hasMoreMessages = older.length > MESSAGE_PAGE_SIZE;
+    const page = hasMoreMessages ? older.slice(0, MESSAGE_PAGE_SIZE) : older;
+
+    res.status(200).json({
+      status: "success",
+      data: { messages: page.reverse(), hasMoreMessages },
+    });
   },
 );
 
