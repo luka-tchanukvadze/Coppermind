@@ -8,11 +8,13 @@
 
 ## What it is
 
-A quiet corner of the internet for readers. You add books to your shelf - want to read, reading, or finished - and jot down notes that stay private or get shared. You add friends, see what they are reading, start a discussion about a book, and message each other live, like texting.
+A quiet corner of the internet for readers. You add books to your shelf - want to read, reading, or finished - and write notes that stay private or get shared. You add friends, see what they are reading, start a discussion about a book, and message each other live, like texting.
 
 No points, no streaks, no feed shouting for attention. It is meant to feel like a good library: calm, personal, yours.
 
-I built it because Goodreads felt dated and clunky, and it was never really about talking with other readers. So I built my own: modern, calm, and made for the conversation, not just the list.
+## Why I built it
+
+I love Goodreads for keeping track of what I read. But I always wished it felt more modern, that it let me keep my own notes right next to each book, and that it made it easier to actually talk about books with other people. So I decided to build the version I wanted to use: calm, fresh, and made for the conversation, not just the list.
 
 ## What you can do
 
