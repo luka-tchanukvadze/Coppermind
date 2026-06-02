@@ -1,48 +1,56 @@
 # Coppermind
 
-**Goodreads for people who actually want to talk about the book.** Shelve what you read, keep your notes with it, and argue plot twists with friends in real time.
+**A calm, social reading platform for people who actually talk about books.** Keep a shelf, write your thoughts next to each book, and talk them over with friends in real time.
 
-🔗 Live at [coppermind.tchanu.com](https://coppermind.tchanu.com) - served from a Raspberry Pi in my apartment.
+🔗 Live at [coppermind.tchanu.com](https://coppermind.tchanu.com)
 
 ---
 
 ## What it is
 
-A social reading app. You keep a shelf (want to read / reading / finished), write notes on each book that are private or shared per entry, add friends, start discussions, and message them live. The catalog comes from Google Books with an Open Library fallback. Recommendations are three tiers: what your friends are reading, then your top genres, then what's popular.
+A quiet corner of the internet for readers. You add books to your shelf - want to read, reading, or finished - and jot down notes that stay private or get shared. You add friends, see what they are reading, start a discussion about a book, and message each other live, like texting.
 
-It's meant to feel quiet. No streaks, no points, no algorithmic feed shouting at you.
+No points, no streaks, no feed shouting for attention. It is meant to feel like a good library: calm, personal, yours.
 
-## The part worth reading the code for
+I built it because Goodreads felt dated and clunky, and it was never really about talking with other readers. So I built my own: modern, calm, and made for the conversation, not just the list.
 
-Most of the work went into the live chat being *correct*, not just working in a demo.
+## What you can do
 
-- **Optimistic send, no flicker.** The client mints a `clientMessageId`, the server echoes it back, and the socket handler reconciles three cases against the query cache - swap the optimistic row, skip a duplicate, or append an incoming one. It never refetches the thread, so messages you scrolled up to read don't vanish under you.
-- **Pagination that doesn't lose messages.** History pages in on scroll-up with a `(createdAt, id)` keyset cursor. Sorting on the timestamp alone silently drops messages that land in the same millisecond; the id tiebreaker closes that. Scroll position is anchored before paint, so the viewport never jumps when older messages load.
-- **Presence that survives multiple tabs.** A user maps to a *set* of sockets. Their state (online / away / offline) is derived from that set rather than stored, and events only fire on a real transition, so opening a second tab doesn't spam your friends with "came online."
-- **One marker, three features.** A single "last saw this at" timestamp per relationship drives unread message counts, read state, and the Facebook-style friend-request badge - no separate read-receipt tables.
+- **Shelve your books** and track where you are with each one.
+- **Keep notes** on a book, private to you or shared with friends.
+- **Add friends** and see what they are reading right now.
+- **Discuss** a book in its own thread.
+- **Chat live**, with read state and who is online.
+- **Get recommendations** from what your friends read and the genres you love.
 
-Elsewhere: the rate limiter fails open (if Redis dies, login and search keep serving instead of 500ing), book search retries then falls back Google to Open Library, and the error handler returns generic messages in production so it can't leak internals or let someone probe which emails are registered.
+## For the curious: how it is built
+
+This part is for the technically minded, but I have tried to keep it readable.
+
+Most of the work went into the **live chat being genuinely correct**, not just looking fine in a quick demo:
+
+- **Messages never flicker or vanish.** A message you send appears instantly, and when the server confirms it the app quietly reconciles the two with no jarring refresh. Scroll up to read old messages and new arrivals will not yank you around.
+- **History loads as you scroll up**, and it is careful never to skip or duplicate a message, even two sent in the very same millisecond.
+- **"Online" status is honest.** Open the app in two tabs and your friends do not see you flicker online twice. Presence is worked out from all your open connections, not guessed.
+- **One small piece of bookkeeping powers three features at once**: unread counts, read state, and the new-friend-request badge, with no extra clutter.
+
+A few other touches: book search pulls from Google Books and quietly falls back to another source if that is slow, and errors shown to users stay generic, so the app never leaks internal details or reveals which emails have accounts.
 
 ## How it runs
 
-The interesting half. There's no cloud server.
+The part I am proudest of: **there is no rented cloud server.** The whole backend runs on a small Raspberry Pi at home.
+
+When I push new code, it is built automatically and the Pi quietly updates itself to the new version, with no manual steps. The site reaches the outside world through a secure tunnel, so my home network is never directly exposed - no open ports, no visible home address. The part you see in the browser is hosted separately on Vercel for speed.
 
 ```
-push to master
+push new code
       │
       ▼
-GitHub Actions ── build linux/arm64 image ──► GHCR
-                                               │
-                                       Watchtower pulls
-                                               ▼
-          Raspberry Pi (Docker): Express + Postgres + Redis
-                                               │
-                                     Cloudflare Tunnel
-                                               ▼
-                                       api.tchanu.com
+ built automatically
+      │
+      ▼
+ Raspberry Pi at home  ──secure tunnel──►  the internet
 ```
-
-The frontend is on Vercel (`coppermind.tchanu.com`). The backend is a Docker container on a Raspberry Pi at home, reachable only through a Cloudflare Tunnel - no open ports, home IP never exposed. Push to `master`, CI builds the ARM64 image, Watchtower on the Pi pulls and restarts it, and migrations run on container boot. The auth cookie is scoped to the parent domain so it stays first-party across both subdomains.
 
 ## Stack
 
@@ -65,4 +73,4 @@ cd frontend && npm install && npm run dev
 
 ## Why "Coppermind"
 
-A *Stormlight Archive* reference. A coppermind is where you store memories so you don't lose them. Felt right for a place to keep what you read.
+A _Stormlight Archive_ reference. A coppermind is where you store memories so you do not lose them. Felt right for a place to keep what you read.
