@@ -36,12 +36,20 @@ import { formatTime, formatShortDate } from "@/lib/format";
 
 type MessageGroup = { userId: string; messages: Message[] };
 
-// collapse consecutive messages from the same sender into one group
+// collapse consecutive messages from the same sender into one group. also break
+// on a day change, so a group never spans midnight - otherwise the date divider
+// (computed from the group's FIRST message) would swallow the next day's
+// messages and never show a new day header
 function groupConsecutive(messages: Message[]): MessageGroup[] {
   const groups: MessageGroup[] = [];
   for (const m of messages) {
     const last = groups[groups.length - 1];
-    if (last && last.userId === m.userId) last.messages.push(m);
+    const sameSender = last && last.userId === m.userId;
+    const sameDay =
+      last &&
+      formatShortDate(last.messages.at(-1)!.createdAt) ===
+        formatShortDate(m.createdAt);
+    if (sameSender && sameDay) last.messages.push(m);
     else groups.push({ userId: m.userId, messages: [m] });
   }
   return groups;
