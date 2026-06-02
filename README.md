@@ -70,4 +70,4 @@ Curious about the setup or want to run it locally? Reach out and I will walk you
 
 ## Why "Coppermind"
 
-A _Stormlight Archive_ reference. A coppermind is where you store memories so you do not lose them. Felt right for a place to keep what you read.
+A _Mistborn_ reference, from Brandon Sanderson's Cosmere. A coppermind is where you store memories so you do not lose them. Felt right for a place to keep what you read.
