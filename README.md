@@ -47,16 +47,16 @@ This part is for the technically minded, but I have tried to keep it readable.
 
 The part I am proudest of: **there is no rented cloud server.** The whole backend runs on a small Raspberry Pi at home.
 
-When I push new code, it is built automatically and the Pi quietly updates itself to the new version, with no manual steps. The site reaches the outside world through a secure tunnel, so my home network is never directly exposed - no open ports, no visible home address. The part you see in the browser is hosted separately on Vercel for speed.
+When I push new code, it builds and deploys itself to the Pi automatically, with no manual steps. The backend is never exposed to the internet directly, and the part you see in the browser is hosted separately for speed.
 
 ```
 push new code
       │
       ▼
- built automatically
+ builds and deploys itself
       │
       ▼
- Raspberry Pi at home  ──secure tunnel──►  the internet
+ Raspberry Pi at home  ──►  the internet
 ```
 
 ## Stack
