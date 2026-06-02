@@ -1,7 +1,7 @@
-// Date helpers. We use UTC getters everywhere so server-render and client-hydrate
-// produce the SAME string regardless of the user's timezone (otherwise React
-// throws a hydration mismatch). When real users sign in we can switch to their
-// timezone preference once it's stored on the User model.
+// Date helpers. Use LOCAL getters so dates/times match the user's timezone -
+// a message sent at 1am local must show as today, not yesterday's UTC date.
+// Safe from hydration mismatch because every caller renders client-side from
+// TanStack-Query data (undefined during SSR, so no date is in the server HTML).
 
 const SHORT_MONTHS = [
   "Jan",
@@ -20,18 +20,18 @@ const SHORT_MONTHS = [
 
 export function formatShortDate(iso: string): string {
   const d = new Date(iso);
-  return `${SHORT_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
 export function formatLongDate(iso: string): string {
   const d = new Date(iso);
-  return `${SHORT_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 export function formatTime(iso: string): string {
   const d = new Date(iso);
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes();
+  const h = d.getHours();
+  const m = d.getMinutes();
   const hh = ((h + 11) % 12) + 1;
   const ampm = h < 12 ? "AM" : "PM";
   return `${hh}:${m.toString().padStart(2, "0")} ${ampm}`;
