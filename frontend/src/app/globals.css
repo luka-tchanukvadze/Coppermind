@@ -88,6 +88,13 @@ body {
   color: var(--ink);
 }
 
+/* always reserve space for the vertical scrollbar so the page width stays
+   constant when content height changes (switching tabs/filters, live search).
+   without this the scrollbar pops in/out and shifts the layout ~15px sideways */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
