@@ -37,11 +37,11 @@ This part is for the technically minded, but I have tried to keep it readable.
 - **"Online" status is honest.** Open the app in two tabs and your friends do not see you flicker online twice. Presence is worked out from all your open connections, not guessed.
 - **One small piece of bookkeeping powers three features at once**: unread counts, read state, and the new-friend-request badge, with no extra clutter.
 
-**Book search that does not fall over.** Search pulls from the Google Books catalog. If Google is slow or down, it retries a couple of times, then quietly falls back to a second source (Open Library) so you still get results instead of an error. It also picks the sharpest available cover image and cleans up the data before showing it.
+**Book search that does not break.** Search pulls from the Google Books catalog. If Google is slow or down, it retries a couple of times, then quietly falls back to a second source (Open Library) so you still get results instead of an error. It also picks the sharpest available cover image and cleans up the data before showing it.
 
 **Recommendations in three layers.** Instead of a black-box algorithm, suggestions are built in tiers that each fill in when the one above runs out: first books your friends are reading, then more of the genres you read most, then what is popular overall. The results are cached for a short while so the page stays fast and does not recompute on every visit.
 
-**Built to stay calm under pressure.** Errors shown to users stay generic, so the app never leaks internal details or reveals which emails have accounts. Login and signup are rate limited to blunt brute-force and spam. Slow or failing external services are caught and handled rather than left to crash a request.
+**Built to stay calm under pressure.** Sensible handling for errors, abuse, and slow external services keeps it stable and safe to use, instead of breaking when something goes wrong.
 
 ## How it runs
 
