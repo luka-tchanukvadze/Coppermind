@@ -25,10 +25,10 @@ export function EntryCard({ entry }: { entry: CustomData }) {
         <h2 className="min-w-0 wrap-break-word font-serif text-xl font-medium leading-tight text-ink sm:text-2xl">
           {entry.title}
         </h2>
-        {/* Edit/delete actions are hidden until the card is hovered or focused -
-            keeps the journal layout clean. focus-within keeps them visible
-            while a dialog is open or a button is keyboard-focused. */}
-        <div className="flex items-center gap-1 text-muted opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        {/* Edit/delete actions: always visible on mobile (no hover there to
+            reveal them), hover/focus-reveal on desktop to keep the journal
+            layout clean. focus-within keeps them up while a dialog is open. */}
+        <div className="flex items-center gap-1 text-muted transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:opacity-0">
           <EditEntryDialog
             trigger={
               <button
