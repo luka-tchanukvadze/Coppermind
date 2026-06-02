@@ -20,6 +20,7 @@ I love Goodreads for keeping track of what I read. But I always wished it felt m
 
 - **Shelve your books** and track where you are with each one.
 - **Keep notes** on a book, private to you or shared with friends.
+- **Follow a feed** of what your friends are reading and shelving, so you never miss what they are into.
 - **Add friends** and see what they are reading right now.
 - **Discuss** a book in its own thread.
 - **Chat live**, with read state and who is online.
@@ -29,14 +30,18 @@ I love Goodreads for keeping track of what I read. But I always wished it felt m
 
 This part is for the technically minded, but I have tried to keep it readable.
 
-Most of the work went into the **live chat being genuinely correct**, not just looking fine in a quick demo:
+**Live chat that is actually correct.** This was the hardest part, and most of the care went here, not just making it look fine in a quick demo:
 
 - **Messages never flicker or vanish.** A message you send appears instantly, and when the server confirms it the app quietly reconciles the two with no jarring refresh. Scroll up to read old messages and new arrivals will not yank you around.
 - **History loads as you scroll up**, and it is careful never to skip or duplicate a message, even two sent in the very same millisecond.
 - **"Online" status is honest.** Open the app in two tabs and your friends do not see you flicker online twice. Presence is worked out from all your open connections, not guessed.
 - **One small piece of bookkeeping powers three features at once**: unread counts, read state, and the new-friend-request badge, with no extra clutter.
 
-A few other touches: book search pulls from Google Books and quietly falls back to another source if that is slow, and errors shown to users stay generic, so the app never leaks internal details or reveals which emails have accounts.
+**Book search that does not fall over.** Search pulls from the Google Books catalog. If Google is slow or down, it retries a couple of times, then quietly falls back to a second source (Open Library) so you still get results instead of an error. It also picks the sharpest available cover image and cleans up the data before showing it.
+
+**Recommendations in three layers.** Instead of a black-box algorithm, suggestions are built in tiers that each fill in when the one above runs out: first books your friends are reading, then more of the genres you read most, then what is popular overall. The results are cached for a short while so the page stays fast and does not recompute on every visit.
+
+**Built to stay calm under pressure.** Errors shown to users stay generic, so the app never leaks internal details or reveals which emails have accounts. Login and signup are rate limited to blunt brute-force and spam. Slow or failing external services are caught and handled rather than left to crash a request.
 
 ## How it runs
 
@@ -59,19 +64,9 @@ push new code
 **Backend** - Express 5, TypeScript, Prisma + PostgreSQL, Redis, Socket.IO, JWT in an httpOnly cookie.
 **Frontend** - Next.js 15 (App Router), React 19, Tailwind v4, shadcn/ui, TanStack Query, react-hook-form + Zod.
 
-## Run it locally
+## Running it yourself
 
-Needs Postgres and Redis. Put `DATABASE_URL`, `REDIS_URL`, and `JWT_SECRET` in `backend/.env`.
-
-```bash
-# backend
-npm install
-npx prisma migrate dev --schema=./backend/prisma/schema.prisma
-npm run dev
-
-# frontend
-cd frontend && npm install && npm run dev
-```
+Curious about the setup or want to run it locally? Reach out and I will walk you through it.
 
 ## Why "Coppermind"
 
