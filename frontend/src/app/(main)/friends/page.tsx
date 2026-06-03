@@ -19,6 +19,7 @@ import {
   useIncomingRequests,
   useOutgoingRequests,
   useMarkRequestsSeen,
+  useUnseenRequestCount,
   type FriendUser,
 } from "@/lib/api/friends";
 import { useMe, useAllUsers } from "@/lib/api/users";
@@ -28,6 +29,10 @@ export default function FriendsPage() {
   const { data: friends = [], isLoading: friendsLoading } = useFriends();
   const { data: incoming = [], isLoading: incomingLoading } =
     useIncomingRequests();
+  // unseen = requests newer than my last Requests-tab visit. drives the red dot
+  // on the Requests tab. shares the ["friends-incoming"] cache (no extra fetch)
+  // and clears when the tab opens, since markSeen zeroes it
+  const unseenRequestCount = useUnseenRequestCount();
   const { data: outgoing = [], isLoading: outgoingLoading } =
     useOutgoingRequests();
   const { data: allUsers = [], isLoading: usersLoading } = useAllUsers();
@@ -113,6 +118,12 @@ export default function FriendsPage() {
           </TabsTrigger>
           <TabsTrigger value="requests">
             Requests ({incoming.length + outgoing.length})
+            {unseenRequestCount > 0 && (
+              <span
+                aria-label={`${unseenRequestCount} new`}
+                className="ml-1.5 inline-block h-2 w-2 rounded-full bg-error align-middle"
+              />
+            )}
           </TabsTrigger>
           <TabsTrigger value="find">Find people</TabsTrigger>
         </TabsList>

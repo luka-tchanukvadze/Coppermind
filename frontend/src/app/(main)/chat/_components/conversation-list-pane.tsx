@@ -2,35 +2,44 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Search, Trash2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
 import { OnlineDot } from "@/components/shared/online-dot";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ConversationListSkeleton } from "@/components/chat/chat-skeleton";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useConversations, useDeleteConversation } from "@/lib/api/conversations";
+import { useConversations } from "@/lib/api/conversations";
 import { useMe } from "@/lib/api/users";
 import { formatRelative } from "@/lib/format";
+// Delete-conversation UI is disabled for now (backend route stays live). To
+// re-enable, I have to restore these imports:
+//   import { useRouter } from "next/navigation";
+//   import { Trash2 } from "lucide-react"; // add Trash2 to the lucide import
+//   import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+//   import { useDeleteConversation } from "@/lib/api/conversations";
 
 interface ConversationListPaneProps {
   activeConvoId: string | null;
   hideOnMobile: boolean;
 }
 
-export function ConversationListPane({ activeConvoId, hideOnMobile }: ConversationListPaneProps) {
+export function ConversationListPane({
+  activeConvoId,
+  hideOnMobile,
+}: ConversationListPaneProps) {
   const { data: convos = [], isLoading } = useConversations();
   const { data: me } = useMe();
-  const deleteConversation = useDeleteConversation();
-  const router = useRouter();
+  // const deleteConversation = useDeleteConversation();
+  // const router = useRouter();
   const [search, setSearch] = useState("");
 
   // client-side filter on the already-loaded list. matches the other person's
   // name - cheap and what users expect from a sidebar search
   const q = search.trim().toLowerCase();
   const filtered = q
-    ? convos.filter((c) => c.participants[0]?.user.name.toLowerCase().includes(q))
+    ? convos.filter((c) =>
+        c.participants[0]?.user.name.toLowerCase().includes(q),
+      )
     : convos;
 
   return (
@@ -41,7 +50,9 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
       )}
     >
       <header className="border-b px-5 py-5">
-        <h2 className="font-serif text-xl font-medium leading-tight text-ink">Conversations</h2>
+        <h2 className="font-serif text-xl font-medium leading-tight text-ink">
+          Conversations
+        </h2>
         <div className="relative mt-3">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
           <Input
@@ -58,7 +69,10 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
       ) : convos.length === 0 ? (
         <p className="px-5 py-4 text-sm text-muted">
           No conversations yet. Pick a{" "}
-          <Link href="/friends" className="font-medium text-accent hover:underline">
+          <Link
+            href="/friends"
+            className="font-medium text-accent hover:underline"
+          >
             friend
           </Link>{" "}
           to send the first message.
@@ -78,16 +92,20 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
             // active one (avoids a flash before mark-read resolves)
             const hasUnread = c.unreadCount > 0 && !isActive;
             return (
-              <li key={c.id} className="group/row relative">
+              <li key={c.id}>
                 <Link
                   href={`/chat/${c.id}`}
                   className={cn(
-                    "flex items-start gap-3 border-b border-border/60 px-5 py-3.5 pr-12 transition-colors",
+                    "flex items-start gap-3 border-b border-border/60 px-5 py-3.5 transition-colors",
                     isActive ? "bg-accent-soft" : "hover:bg-muted-bg/40",
                   )}
                 >
                   <div className="relative shrink-0">
-                    <UserPic photo={other?.photo} name={other?.name ?? ""} size="md" />
+                    <UserPic
+                      photo={other?.photo}
+                      name={other?.name ?? ""}
+                      size="md"
+                    />
                     {other?.id && <OnlineDot userId={other.id} />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -113,7 +131,9 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                         <>
                           <span>{formatRelative(lastMessage.createdAt)}</span>
                           {" · "}
-                          {isMine ? `You: ${lastMessage.text}` : lastMessage.text}
+                          {isMine
+                            ? `You: ${lastMessage.text}`
+                            : lastMessage.text}
                         </>
                       ) : (
                         "No messages yet."
@@ -126,10 +146,11 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                     </span>
                   )}
                 </Link>
-                {/* delete (one-way, "for me"): always visible on mobile (no
-                    hover there), hover/focus-reveal on desktop. sibling of the
-                    Link, not nested, so clicking never navigates. z-10 to sit
-                    above the row and capture its own clicks */}
+                {/* Delete-conversation UI disabled for now (backend route is
+                    live). To re-enable: uncomment the block below, restore the
+                    delete imports + the deleteConversation/router hooks, and add
+                    `group/row relative` on the <li> and `pr-12` on the <Link>. */}
+                {/*
                 <div className="absolute right-3 top-1/2 z-10 -translate-y-1/2 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100 sm:opacity-0">
                   <ConfirmDialog
                     trigger={
@@ -147,11 +168,11 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                     variant="destructive"
                     onConfirm={() => {
                       deleteConversation.mutate(c.id);
-                      // if I deleted the thread I'm viewing, leave the room
                       if (isActive) router.push("/chat");
                     }}
                   />
                 </div>
+                */}
               </li>
             );
           })}
