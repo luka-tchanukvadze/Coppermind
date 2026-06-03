@@ -23,7 +23,7 @@ export function IncomingRequestRow({
     >
       <UserPic photo={user.photo} name={user.name} size="md" />
       <div className="min-w-0 flex-1">
-        <div className="font-medium text-ink">{user.name}</div>
+        <div className="truncate font-medium text-ink">{user.name}</div>
         <div className="text-xs text-muted">
           Requested {formatRelative(createdAt)}
         </div>
