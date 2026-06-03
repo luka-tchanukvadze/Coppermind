@@ -68,8 +68,11 @@ async function updateUserBookRequst(id: string, input: UpdateUserBookInput) {
 async function fetchPublicUserBooks(
   userId: string,
 ): Promise<UserBookWithBook[]> {
+  /* TODO - limit=200 is a stopgap (same hack as fetchAllUserBooks). 200+ public
+     books still truncates. Swap shelves over to real pagination (load-more /
+     infinite scroll like chat) and drop the hardcoded limit. */
   const res = await apiClient.get<PublicUserBooksResponse>(
-    `/user-books/user/${userId}`,
+    `/user-books/user/${userId}?limit=200`,
   );
   return res.data.friendBooks.map(({ _count, ...rest }) => ({
     ...rest,
