@@ -263,12 +263,10 @@ export const getConversation = catchAsync(
       : conversation.messages;
     const ordered = { ...conversation, messages: page.reverse() };
 
-    res
-      .status(200)
-      .json({
-        status: "success",
-        data: { conversation: ordered, hasMoreMessages, isFriend },
-      });
+    res.status(200).json({
+      status: "success",
+      data: { conversation: ordered, hasMoreMessages, isFriend },
+    });
   },
 );
 
@@ -342,6 +340,29 @@ export const unsendMessage = catchAsync(
     });
 
     if (unsend.count === 0) return next(new AppError("Message not found", 404));
+
+    res.status(204).json({});
+  },
+);
+
+export const deleteConversation = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user!.id;
+    const conversationId = req.params.conversationId as string;
+
+    // ownership: you can only delete a thread you're actually in
+    const isParticipant = await prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId },
+      select: { id: true },
+    });
+    if (!isParticipant)
+      return next(new AppError("Conversation not found", 404));
+
+    await prisma.$transaction([
+      prisma.message.deleteMany({ where: { conversationId } }),
+      prisma.conversationParticipant.deleteMany({ where: { conversationId } }),
+      prisma.conversation.delete({ where: { id: conversationId } }),
+    ]);
 
     res.status(204).json({});
   },

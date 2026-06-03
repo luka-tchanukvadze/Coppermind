@@ -13,7 +13,13 @@ router.route("/").get(messageController.getConversations);
 router
   .route("/:friendId")
   .post(validate(sendMessageSchema), messageController.sendMessage);
-router.route("/:conversationId").get(messageController.getConversation);
+router
+  .route("/:conversationId")
+  .get(messageController.getConversation)
+  // hard-deletes the whole thread for both participants.
+  // not exposed in the UI. safe next to /:conversationId/:messageId (unsend)
+  // because that route has an extra path segment, so methods never collide
+  .delete(messageController.deleteConversation);
 // literal "/messages" + "/read" - declared before the :messageId param route
 // so they can't be swallowed by it
 router
