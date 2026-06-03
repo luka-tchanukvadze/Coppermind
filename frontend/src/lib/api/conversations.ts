@@ -118,6 +118,10 @@ async function markConversationReadRequest(conversationId: string) {
   return apiClient.patch(`/messages/${conversationId}/read`);
 }
 
+async function deleteConversationRequest(conversationId: string) {
+  return apiClient.delete(`/messages/${conversationId}`);
+}
+
 function useConversations() {
   return useQuery({
     queryKey: ["conversations"],
@@ -218,6 +222,24 @@ function useMarkConversationRead() {
   });
 }
 
+// "delete for me" - removes the thread from MY list only (the other person
+// keeps theirs; it reappears if they message me again). optimistically drop it
+// from the cached list and forget the thread detail so a reopen refetches clean
+function useDeleteConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteConversationRequest,
+    onSuccess: (_data, conversationId) => {
+      queryClient.setQueryData<ConversationPreview[]>(
+        ["conversations"],
+        (old) => old?.filter((c) => c.id !== conversationId),
+      );
+      queryClient.removeQueries({ queryKey: ["conversation", conversationId] });
+    },
+  });
+}
+
 // total unread across all conversations, for the nav badge. reads the same
 // cached ["conversations"] query every consumer shares, so no extra fetch
 function useUnreadTotal(): number {
@@ -232,5 +254,6 @@ export {
   useSendMessage,
   useUnsendMessage,
   useMarkConversationRead,
+  useDeleteConversation,
   useUnreadTotal,
 };

@@ -143,6 +143,11 @@ model ConversationParticipant {
   // messages from the other person with createdAt > lastReadAt. null = never
   // opened, so every message from the other side counts as unread
   lastReadAt      DateTime?
+  // "delete for me" marker. set to now() when this user clears the thread from
+  // their list. the conversation is then hidden from THEIR list until a message
+  // arrives newer than this (then it reappears). the other participant's row is
+  // independent, so deleting is one-way. null = never cleared
+  clearedAt       DateTime?
 
   @@unique([userId, conversationId])
   @@index([conversationId])

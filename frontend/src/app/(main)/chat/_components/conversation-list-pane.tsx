@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Trash2 } from "lucide-react";
 import { UserPic } from "@/components/shared/user-pic";
 import { OnlineDot } from "@/components/shared/online-dot";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ConversationListSkeleton } from "@/components/chat/chat-skeleton";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useConversations } from "@/lib/api/conversations";
+import { useConversations, useDeleteConversation } from "@/lib/api/conversations";
 import { useMe } from "@/lib/api/users";
 import { formatRelative } from "@/lib/format";
 
@@ -20,6 +22,8 @@ interface ConversationListPaneProps {
 export function ConversationListPane({ activeConvoId, hideOnMobile }: ConversationListPaneProps) {
   const { data: convos = [], isLoading } = useConversations();
   const { data: me } = useMe();
+  const deleteConversation = useDeleteConversation();
+  const router = useRouter();
   const [search, setSearch] = useState("");
 
   // client-side filter on the already-loaded list. matches the other person's
@@ -74,11 +78,11 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
             // active one (avoids a flash before mark-read resolves)
             const hasUnread = c.unreadCount > 0 && !isActive;
             return (
-              <li key={c.id}>
+              <li key={c.id} className="group/row relative">
                 <Link
                   href={`/chat/${c.id}`}
                   className={cn(
-                    "flex items-start gap-3 border-b border-border/60 px-5 py-3.5 transition-colors",
+                    "flex items-start gap-3 border-b border-border/60 px-5 py-3.5 pr-12 transition-colors",
                     isActive ? "bg-accent-soft" : "hover:bg-muted-bg/40",
                   )}
                 >
@@ -122,6 +126,32 @@ export function ConversationListPane({ activeConvoId, hideOnMobile }: Conversati
                     </span>
                   )}
                 </Link>
+                {/* delete (one-way, "for me"): always visible on mobile (no
+                    hover there), hover/focus-reveal on desktop. sibling of the
+                    Link, not nested, so clicking never navigates. z-10 to sit
+                    above the row and capture its own clicks */}
+                <div className="absolute right-3 top-1/2 z-10 -translate-y-1/2 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100 sm:opacity-0">
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        type="button"
+                        aria-label="Delete conversation"
+                        className="rounded-md bg-surface p-1.5 text-muted shadow-sm hover:bg-muted-bg hover:text-error"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    }
+                    title="Delete this conversation?"
+                    description="It is removed from your list only. The other person keeps their copy, and it comes back here if they message you again."
+                    confirmLabel="Delete"
+                    variant="destructive"
+                    onConfirm={() => {
+                      deleteConversation.mutate(c.id);
+                      // if I deleted the thread I'm viewing, leave the room
+                      if (isActive) router.push("/chat");
+                    }}
+                  />
+                </div>
               </li>
             );
           })}

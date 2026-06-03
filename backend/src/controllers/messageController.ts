@@ -108,32 +108,46 @@ export const getConversations = catchAsync(
       },
     });
 
+    // My per-conversation state: lastReadAt (unread cutoff) + clearedAt (the
+    // "delete for me" marker). Separate query because Prisma can't include my
+    // own participant alongside the filtered "other" one in a single relation
+    // include. Indexed on (userId, conversationId).
+    const myParts = await prisma.conversationParticipant.findMany({
+      where: { userId, conversationId: { in: conversations.map((c) => c.id) } },
+      select: { conversationId: true, lastReadAt: true, clearedAt: true },
+    });
+    const lastReadMap = new Map(
+      myParts.map((p) => [p.conversationId, p.lastReadAt]),
+    );
+    const clearedAtMap = new Map(
+      myParts.map((p) => [p.conversationId, p.clearedAt]),
+    );
+
+    // "delete for me": hide a thread I cleared UNLESS the other person has
+    // messaged since (last message newer than my clearedAt), in which case it
+    // reappears. only filters MY list - their copy is untouched.
+    const visible = conversations.filter((c) => {
+      const cleared = clearedAtMap.get(c.id);
+      if (!cleared) return true;
+      const last = c.messages[0];
+      return !!last && last.createdAt > cleared;
+    });
+
     // Sort by most-recent activity: the last message's time, falling back to
     // the conversation's createdAt for a brand-new convo with no messages yet.
     // done in JS because the sort key lives on the included last message, not
     // the conversation row. fine at this scale (every convo is fetched)
-    const lastActivity = (c: (typeof conversations)[number]) =>
+    const lastActivity = (c: (typeof visible)[number]) =>
       c.messages[0]?.createdAt ?? c.createdAt;
-    conversations.sort(
+    visible.sort(
       (a, b) => lastActivity(b).getTime() - lastActivity(a).getTime(),
-    );
-
-    // My lastReadAt per conversation. Separate query because Prisma can't
-    // include my own participant alongside the filtered "other" one in a
-    // single relation include. Indexed on (userId, conversationId).
-    const myParts = await prisma.conversationParticipant.findMany({
-      where: { userId, conversationId: { in: conversations.map((c) => c.id) } },
-      select: { conversationId: true, lastReadAt: true },
-    });
-    const lastReadMap = new Map(
-      myParts.map((p) => [p.conversationId, p.lastReadAt]),
     );
 
     // Unread = messages from the OTHER person newer than my lastReadAt. The
     // cutoff differs per conversation, so it's one groupBy with an OR clause
     // each - a single round trip, and every clause hits the
     // (conversationId, createdAt) index. epoch fallback = never-read.
-    const orClauses = conversations.map((c) => ({
+    const orClauses = visible.map((c) => ({
       conversationId: c.id,
       userId: { not: userId },
       createdAt: { gt: lastReadMap.get(c.id) ?? new Date(0) },
@@ -149,7 +163,7 @@ export const getConversations = catchAsync(
       grouped.map((g) => [g.conversationId, g._count._all]),
     );
 
-    const conversation = conversations.map((c) => ({
+    const conversation = visible.map((c) => ({
       ...c,
       unreadCount: unreadMap.get(c.id) ?? 0,
     }));
@@ -345,24 +359,25 @@ export const unsendMessage = catchAsync(
   },
 );
 
+// "Delete for me" - one-way. Stamps MY clearedAt so the thread drops out of my
+// conversation list; the other person's copy is untouched. It reappears in my
+// list if they message me again (getConversations hides it only while nothing
+// is newer than my clearedAt). lastReadAt is bumped too so a revived thread
+// counts only genuinely-new messages as unread, not ones I cleared past.
+// updateMany count doubles as the membership check (0 = not my conversation)
 export const deleteConversation = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.id;
     const conversationId = req.params.conversationId as string;
 
-    // ownership: you can only delete a thread you're actually in
-    const isParticipant = await prisma.conversationParticipant.findFirst({
+    const now = new Date();
+    const result = await prisma.conversationParticipant.updateMany({
       where: { conversationId, userId },
-      select: { id: true },
+      data: { clearedAt: now, lastReadAt: now },
     });
-    if (!isParticipant)
-      return next(new AppError("Conversation not found", 404));
 
-    await prisma.$transaction([
-      prisma.message.deleteMany({ where: { conversationId } }),
-      prisma.conversationParticipant.deleteMany({ where: { conversationId } }),
-      prisma.conversation.delete({ where: { id: conversationId } }),
-    ]);
+    if (result.count === 0)
+      return next(new AppError("Conversation not found", 404));
 
     res.status(204).json({});
   },

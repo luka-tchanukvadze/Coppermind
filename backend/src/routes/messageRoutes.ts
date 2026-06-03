@@ -16,8 +16,8 @@ router
 router
   .route("/:conversationId")
   .get(messageController.getConversation)
-  // hard-deletes the whole thread for both participants.
-  // not exposed in the UI. safe next to /:conversationId/:messageId (unsend)
+  // "delete for me" - clears the thread from the caller's list only (the other
+  // person keeps theirs). safe next to /:conversationId/:messageId (unsend)
   // because that route has an extra path segment, so methods never collide
   .delete(messageController.deleteConversation);
 // literal "/messages" + "/read" - declared before the :messageId param route
