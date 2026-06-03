@@ -145,6 +145,10 @@ function invalidateAfterFriendshipChange(
   queryClient.invalidateQueries({ queryKey: ["user-profile-stats"] });
   queryClient.invalidateQueries({ queryKey: ["feed"] });
   queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+  // an open chat thread carries an isFriend flag that gates its composer -
+  // refetch so unfriending (or re-adding) flips it to/from read-only without
+  // needing a manual reload
+  queryClient.invalidateQueries({ queryKey: ["conversation"] });
 }
 
 function useAcceptFriendRequest() {

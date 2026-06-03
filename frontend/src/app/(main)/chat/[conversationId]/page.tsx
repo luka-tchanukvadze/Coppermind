@@ -232,6 +232,11 @@ function ChatRoom({ conversationId }: { conversationId: string }) {
 
   const groups = groupConsecutive(messages);
 
+  // unfriended -> read-only thread. only lock on an explicit false from the
+  // server; undefined (e.g. a cache entry written by the socket handler) is
+  // treated as "still a friend" so we never wrongly disable the composer
+  const notFriend = conversation.isFriend === false;
+
   const handleSend = () => {
     const trimmed = text.trim();
     if (!trimmed || !other || !me) return;
@@ -364,28 +369,45 @@ function ChatRoom({ conversationId }: { conversationId: string }) {
       </div>
 
       <footer className="shrink-0 border-t bg-surface/60 px-4 py-3 sm:px-6 sm:py-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          className="mx-auto flex max-w-2xl items-center gap-2"
-        >
-          <EmojiButton onPick={(emoji) => setText((t) => t + emoji)} />
-          <Input
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              if (e.target.value.trim()) notifyTyping();
-              else stopTyping();
+        {notFriend ? (
+          // history above stays readable, but the composer is gone. sendMessage
+          // would 404 anyway - this just makes the state obvious instead of
+          // letting them type into a dead input and only learn on send
+          <p className="mx-auto max-w-2xl text-center text-sm text-muted">
+            You and {other?.name?.split(" ")[0] ?? "this person"} aren&apos;t
+            friends anymore.{" "}
+            <Link
+              href="/friends"
+              className="font-medium text-accent hover:underline"
+            >
+              Add them from Friends
+            </Link>{" "}
+            to message again.
+          </p>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
             }}
-            placeholder={`Message ${other?.name?.split(" ")[0] ?? ""}...`}
-            className="flex-1"
-          />
-          <Button type="submit" size="icon" disabled={!text.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+            className="mx-auto flex max-w-2xl items-center gap-2"
+          >
+            <EmojiButton onPick={(emoji) => setText((t) => t + emoji)} />
+            <Input
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                if (e.target.value.trim()) notifyTyping();
+                else stopTyping();
+              }}
+              placeholder={`Message ${other?.name?.split(" ")[0] ?? ""}...`}
+              className="flex-1"
+            />
+            <Button type="submit" size="icon" disabled={!text.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        )}
       </footer>
     </div>
   );

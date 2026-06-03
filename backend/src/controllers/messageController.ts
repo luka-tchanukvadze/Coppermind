@@ -236,6 +236,25 @@ export const getConversation = catchAsync(
 
     if (!conversation) return next(new AppError("Conversation not found", 404));
 
+    // is the other participant still an accepted friend? drives the chat UI:
+    // when false the client shows a read-only thread and hides the composer.
+    // sendMessage enforces the same rule server-side, so this is UX, not the
+    // security boundary. unfriended convos keep their history, just no new sends
+    const otherUserId = conversation.participants[0]?.user.id;
+    const friendship = otherUserId
+      ? await prisma.friendConnection.findFirst({
+          where: {
+            status: "ACCEPTED",
+            OR: [
+              { requesterId: userId, addresseeId: otherUserId },
+              { requesterId: otherUserId, addresseeId: userId },
+            ],
+          },
+          select: { id: true },
+        })
+      : null;
+    const isFriend = !!friendship;
+
     // the +1 row, if present, just signals "there's more" - drop it, then flip
     // back to ascending order for display
     const hasMoreMessages = conversation.messages.length > MESSAGE_PAGE_SIZE;
@@ -248,7 +267,7 @@ export const getConversation = catchAsync(
       .status(200)
       .json({
         status: "success",
-        data: { conversation: ordered, hasMoreMessages },
+        data: { conversation: ordered, hasMoreMessages, isFriend },
       });
   },
 );

@@ -47,11 +47,19 @@ export type ConversationDetail = {
   participants: Participant[];
   messages: Message[];
   hasMoreMessages?: boolean;
+  // false once the other person is unfriended - the room goes read-only.
+  // optional because socket-prepended/optimistic cache writes don't set it
+  // treat undefined as "still a friend" so we never wrongly lock the composer
+  isFriend?: boolean;
 };
 
 type ConversationsResponse = { data: { conversation: ConversationPreview[] } };
 type ConversationResponse = {
-  data: { conversation: ConversationDetail; hasMoreMessages: boolean };
+  data: {
+    conversation: ConversationDetail;
+    hasMoreMessages: boolean;
+    isFriend: boolean;
+  };
 };
 type OlderMessagesResponse = {
   data: { messages: Message[]; hasMoreMessages: boolean };
@@ -73,9 +81,13 @@ async function fetchConversations(): Promise<ConversationPreview[]> {
 
 async function fetchConversation(id: string): Promise<ConversationDetail> {
   const res = await apiClient.get<ConversationResponse>(`/messages/${id}`);
-  // fold the sibling hasMoreMessages flag onto the cached object so the chat
-  // can read it straight off the conversation
-  return { ...res.data.conversation, hasMoreMessages: res.data.hasMoreMessages };
+  // fold the sibling hasMoreMessages + isFriend flags onto the cached object so
+  // the chat can read them straight off the conversation
+  return {
+    ...res.data.conversation,
+    hasMoreMessages: res.data.hasMoreMessages,
+    isFriend: res.data.isFriend,
+  };
 }
 
 async function fetchOlderMessages(
@@ -128,8 +140,7 @@ function useOlderMessages(conversationId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (before: string) =>
-      fetchOlderMessages(conversationId, before),
+    mutationFn: (before: string) => fetchOlderMessages(conversationId, before),
     onSuccess: ({ messages: older, hasMoreMessages }) => {
       queryClient.setQueryData<ConversationDetail>(
         ["conversation", conversationId],
