@@ -32,18 +32,20 @@ export default function FriendsPage() {
     useOutgoingRequests();
   const { data: allUsers = [], isLoading: usersLoading } = useAllUsers();
   // keep ALL hooks above the meError early return - rules-of-hooks
+  const [tab, setTab] = useState("friends");
   const [findQuery, setFindQuery] = useState("");
   const [friendQuery, setFriendQuery] = useState("");
 
-  // being on the Friends page counts as "seen" - stamp it server-side so the
-  // nav badge clears (facebook-style). keyed on incoming.length so it re-fires
-  // when a new request arrives via socket WHILE the page is open - otherwise the
-  // refetch would re-light the badge for a request the user is looking at
+  // opening the Requests tab counts as "seen" - stamp it server-side so the nav
+  // badge clears (facebook-style). NOT on page mount: landing on /friends opens
+  // the Friends tab, and you haven't actually looked at the requests yet. keyed
+  // on incoming.length too, so a request arriving via socket WHILE the Requests
+  // tab is open also clears instead of re-lighting the badge
   const markSeen = useMarkRequestsSeen();
   const markSeenMutate = markSeen.mutate;
   useEffect(() => {
-    markSeenMutate();
-  }, [markSeenMutate, incoming.length]);
+    if (tab === "requests") markSeenMutate();
+  }, [tab, markSeenMutate, incoming.length]);
 
   // auth-fatal: bail without rendering tabs at all
   if (meError) {
@@ -104,7 +106,7 @@ export default function FriendsPage() {
     <>
       <PageHeader title="Friends" subtitle="The people you read with." />
 
-      <Tabs defaultValue="friends">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="friends">
             Friends ({friendUsers.length})
