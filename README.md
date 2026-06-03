@@ -20,7 +20,7 @@ I love Goodreads for keeping track of what I read. But I always wished it felt m
 
 - **Shelve your books** and track where you are with each one.
 - **Keep notes** on a book, private to you or shared with friends.
-- **Follow a feed** of what your friends are reading and shelving, so you never miss what they are into.
+- **Follow a feed** of what your friends are up to: new books on their shelves, public notes, and discussions.
 - **Add friends** and see what they are reading right now.
 - **Discuss** a book in its own thread.
 - **Chat live**, with read state and who is online.
