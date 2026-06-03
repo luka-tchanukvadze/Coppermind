@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { FeedCard } from "@/components/feed/feed-card";
@@ -24,6 +24,17 @@ export default function FeedPage() {
     isLoading,
     error,
   } = useFeed();
+
+  // greet a brand-new account (flagged on signup) with "Hello there" exactly
+  // once, then clear it so refreshes and future logins get "Welcome back".
+  // read in an effect, not render, to avoid an SSR hydration mismatch
+  const [isNewUser, setIsNewUser] = useState(false);
+  useEffect(() => {
+    if (sessionStorage.getItem("greeting") === "new") {
+      setIsNewUser(true);
+      sessionStorage.removeItem("greeting");
+    }
+  }, []);
 
   // sentinel for infinite scroll - fetch the next page when this scrolls into view
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -53,7 +64,7 @@ export default function FeedPage() {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${me?.name?.split(" ")[0] ?? ""}.`}
+        title={`${isNewUser ? "Hello there" : "Welcome back"}, ${me?.name?.split(" ")[0] ?? ""}.`}
         subtitle="Your library, your friends, what they're reading today."
       />
 

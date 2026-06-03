@@ -43,6 +43,9 @@ function SignupContent() {
         // start the new account from a clean cache (in case the tab held a
         // prior session's data)
         queryClient.clear();
+        // one-shot flag: feed greets a brand-new account with "Hello there"
+        // instead of "Welcome back", then clears it so refreshes/logins don't
+        sessionStorage.setItem("greeting", "new");
         router.push(
           returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
             ? returnUrl
