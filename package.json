@@ -5,7 +5,9 @@
   "main": "server.ts",
   "scripts": {
     "dev": "nodemon --watch backend/src --exec node --loader ts-node/esm backend/src/server.ts",
-    "start": "tsx backend/src/server.ts"
+    "start": "tsx backend/src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "type": "module",
   "keywords": [],
