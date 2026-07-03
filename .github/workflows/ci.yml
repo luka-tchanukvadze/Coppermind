@@ -4,7 +4,23 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "backend/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "eslint.config.mjs"
+      - "types.d.ts"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "backend/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "eslint.config.mjs"
+      - "types.d.ts"
+      - ".github/workflows/ci.yml"
 
 jobs:
   backend:
