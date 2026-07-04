@@ -23,6 +23,8 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
+// testing pipeline
+
 // trust the first hop. host (render/fly/nginx) terminates TLS so req.secure
 // + req.ip come from x-forwarded-* headers. without this the JWT cookie
 // ships without secure in prod and rate-limit sees one shared proxy IP
