@@ -13,3 +13,6 @@ node_modules
 
 .idea
 nest-backend
+
+# personal architecture notes - local only
+notes/
