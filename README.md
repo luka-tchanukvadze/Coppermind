@@ -28,7 +28,7 @@ I love Goodreads for keeping track of what I read. But I always wished it felt m
 
 ## For the curious: how it is built
 
-This part is for the technically minded, but I have tried to keep it readable.
+This part is for the technically minded, but I have tried to keep it readable. For the design decisions and the trade-offs behind them, see the architecture notes in [public-notes/](public-notes/README.md).
 
 **Live chat that is actually correct.** This was the hardest part, and most of the care went here, not just making it look fine in a quick demo:
 
