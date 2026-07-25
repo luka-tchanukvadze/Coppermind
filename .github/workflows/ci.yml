@@ -54,11 +54,58 @@ jobs:
       - name: Lint
         run: npm run lint
 
+  test:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    # a throwaway Postgres just for this job. it is created here, used, and
+    # deleted when the job ends. it never touches the real database or the Pi.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: coppermind_test
+        ports:
+          - 5432:5432
+        # wait until Postgres is actually ready before the steps run
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # point the tests at the container above. the name coppermind_test and the
+      # localhost host are exactly what the safety guard in tests/helpers/db.ts
+      # allows, so the tests are happy to run here.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/coppermind_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=./backend/prisma/schema.prisma
+
+      - name: Create the tables in the test database
+        run: cd backend && npx prisma migrate deploy --schema=./prisma/schema.prisma
+
+      - name: Run tests
+        run: npm test
+
   build-and-push:
     name: Build and push image
-    # the gate: only build after checks pass, and only on a push to master
-    # (never on pull_request - PRs get checked but not deployed).
-    needs: checks
+    # the gate: only build after BOTH checks and tests pass, and only on a push
+    # to master (never on pull_request - PRs get checked but not deployed).
+    needs: [checks, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:

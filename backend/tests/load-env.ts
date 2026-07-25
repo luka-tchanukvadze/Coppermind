@@ -13,19 +13,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const testEnvPath = path.join(repoRoot, ".env.test");
 
-if (!fs.existsSync(testEnvPath)) {
-  // Stop if there is no .env.test. Otherwise the tests would fall back to the
-  // real .env and run against the dev database by mistake.
+if (fs.existsSync(testEnvPath)) {
+  // Local machine: load the normal .env first for shared values like
+  // JWT_SECRET, then load .env.test on top so its database URL replaces the
+  // real one. The order matters.
+  dotenv.config({ path: path.join(repoRoot, ".env"), override: false, quiet: true });
+  dotenv.config({ path: testEnvPath, override: true, quiet: true });
+} else if (!process.env.DATABASE_URL) {
+  // No .env.test file AND no database URL from the environment. That is a real
+  // misconfiguration, so stop. (On the CI server there is no .env.test, but the
+  // workflow sets DATABASE_URL itself, so that case skips this and is fine.)
   throw new Error(
-    `.env.test not found at ${testEnvPath}\n` +
+    `.env.test not found at ${testEnvPath} and DATABASE_URL is not set.\n` +
       `add: DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5432/coppermind_test"`,
   );
 }
-
-// Load the normal .env first to get shared values like JWT_SECRET. Then load
-// .env.test on top, so its database URL replaces the real one. The order matters.
-dotenv.config({ path: path.join(repoRoot, ".env"), override: false, quiet: true });
-dotenv.config({ path: testEnvPath, override: true, quiet: true });
 
 process.env.NODE_ENV = "test";
 
