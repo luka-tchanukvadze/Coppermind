@@ -53,6 +53,12 @@ app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });
 });
 
+// tests run without a live Redis, and rate limiting isn't what they check.
+// skip() stops the counting (no 429 flakiness as the suite grows), and we omit
+// the RedisStore entirely so it never tries to reach a closed client and spam
+// the test output. dev + prod are untouched.
+const isTest = process.env.NODE_ENV === "test";
+
 // rate limit on auth endpoints - 10 attempts per 15 min per IP.
 // blunts brute-force on login + signup spam. forgotPassword too so
 // attackers can't flood inboxes. counter lives in redis so it survives
@@ -63,14 +69,19 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: "fail", message: "Too many attempts, try again later" },
+  skip: () => isTest,
   // if redis is down the store throws on every call. without this, auth
   // endpoints would 500 for everyone instead of just losing rate limiting.
   // degrade open: allow the request through rather than block login/signup
   passOnStoreError: true,
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-    prefix: "rl:auth:",
-  }),
+  ...(isTest
+    ? {}
+    : {
+        store: new RedisStore({
+          sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+          prefix: "rl:auth:",
+        }),
+      }),
 });
 app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/signup", authLimiter);
@@ -86,11 +97,16 @@ const searchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: "fail", message: "Slow down a moment, then try again" },
+  skip: () => isTest,
   passOnStoreError: true,
-  store: new RedisStore({
-    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-    prefix: "rl:search:",
-  }),
+  ...(isTest
+    ? {}
+    : {
+        store: new RedisStore({
+          sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+          prefix: "rl:search:",
+        }),
+      }),
 });
 app.use("/api/v1/books/search", searchLimiter);
 

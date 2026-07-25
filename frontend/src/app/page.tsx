@@ -48,10 +48,6 @@ function LandingContent() {
       </header>
 
       <section className="mx-auto max-w-3xl px-6 pt-20 pb-24 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface px-3 py-1 text-xs font-medium text-muted">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />A library that
-          feels like one
-        </div>
         <h1 className="font-serif text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">
           Your private library.
           <br />
