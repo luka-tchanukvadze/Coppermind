@@ -12,6 +12,12 @@
   "ts-node": {
     "esm": true
   },
-  "include": ["backend/src/**/*", "backend/prisma.config.ts", "types.d.ts"], // Specifies which files to include when compiling your project.
+  // tests are included so `npm run typecheck` catches mistakes in them too
+  "include": [
+    "backend/src/**/*",
+    "backend/tests/**/*",
+    "backend/prisma.config.ts",
+    "types.d.ts"
+  ],
   "exclude": ["node_modules", "**/*.spec.ts", "frontend"] // Specifies which files to exclude when compiling your project.
 }
