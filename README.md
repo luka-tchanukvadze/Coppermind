@@ -4,6 +4,8 @@
 
 🔗 Live at [coppermind.tchanu.com](https://coppermind.tchanu.com)
 
+📸 **Screenshots:** images of the live version are at the end of this README, see [Sneak Peek](#sneak-peek).
+
 ---
 
 ## What it is
@@ -71,3 +73,17 @@ Curious about the setup or want to run it locally? Reach out and I will walk you
 ## Why "Coppermind"
 
 A _Mistborn_ reference, from Brandon Sanderson's Cosmere. A coppermind is where you store memories so you do not lose them. Felt right for a place to keep what you read.
+
+## Sneak Peek
+
+Screenshots of the live version. The real project does more than what is shown here, and if the live demo has issues before I get a chance to fix it, you can still take a look here.
+
+![Landing page](screenshots/01-landing.png)
+
+![Home feed with friends' activity and recommendations](screenshots/02-home-feed.png)
+
+![Books catalog](screenshots/03-books.png)
+
+![Live chat](screenshots/04-chat.png)
+
+![Discussions](screenshots/05-discussions.png)
